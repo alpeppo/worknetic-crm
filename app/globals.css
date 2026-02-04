@@ -1236,14 +1236,24 @@ select.form-input {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: 14px;
-  cursor: pointer;
+  cursor: grab;
   transition: all 0.2s var(--ease-out);
   box-shadow: var(--shadow-sm);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .kanban-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
+}
+
+.kanban-card:active {
+  cursor: grabbing;
+}
+
+.kanban-card.dragging {
+  cursor: grabbing;
 }
 
 .kanban-card-title {

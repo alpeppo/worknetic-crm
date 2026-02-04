@@ -43,7 +43,7 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [editingDeal, setEditingDeal] = useState<Deal | null>(null)
-  const [draggedDeal, setDraggedDeal] = useState<Deal | null>(null)
+  const [draggedDealId, setDraggedDealId] = useState<string | null>(null)
   const [dragOverStage, setDragOverStage] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     lead_id: '',
@@ -100,7 +100,6 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
 
     try {
       if (editingDeal) {
-        // Update existing deal
         const result = await updateDeal(editingDeal.id, {
           name: formData.name,
           value: parseFloat(formData.value),
@@ -117,7 +116,6 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
           setError(result.error || 'Ein Fehler ist aufgetreten')
         }
       } else {
-        // Create new deal
         const result = await createDeal({
           lead_id: formData.lead_id,
           name: formData.name,
@@ -141,52 +139,56 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
     }
   }
 
-  // Drag & Drop handlers
-  const handleDragStart = (e: React.DragEvent, deal: Deal) => {
-    setDraggedDeal(deal)
+  // Simplified Drag & Drop
+  const onDragStart = (e: React.DragEvent<HTMLDivElement>, dealId: string) => {
+    setDraggedDealId(dealId)
     e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('text/plain', deal.id)
-    setTimeout(() => {
-      const element = e.target as HTMLElement
-      element.style.opacity = '0.5'
-    }, 0)
-  }
-
-  const handleDragEnd = (e: React.DragEvent) => {
-    const element = e.target as HTMLElement
-    element.style.opacity = '1'
-    setDraggedDeal(null)
-    setDragOverStage(null)
-  }
-
-  const handleDragOver = (e: React.DragEvent, stageId: string) => {
-    e.preventDefault()
-    e.stopPropagation()
-    e.dataTransfer.dropEffect = 'move'
-    if (dragOverStage !== stageId) {
-      setDragOverStage(stageId)
+    e.dataTransfer.setData('text/plain', dealId)
+    // Add visual feedback
+    if (e.currentTarget) {
+      e.currentTarget.style.opacity = '0.5'
     }
   }
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const onDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+    if (e.currentTarget) {
+      e.currentTarget.style.opacity = '1'
+    }
+    setDraggedDealId(null)
+    setDragOverStage(null)
+  }
+
+  const onDragOver = (e: React.DragEvent<HTMLDivElement>, stageId: string) => {
     e.preventDefault()
-    // Only clear if we're leaving the column entirely
-    const relatedTarget = e.relatedTarget as HTMLElement
-    if (!relatedTarget || !e.currentTarget.contains(relatedTarget)) {
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverStage(stageId)
+  }
+
+  const onDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    // Check if we're leaving to a child element
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX
+    const y = e.clientY
+
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
       setDragOverStage(null)
     }
   }
 
-  const handleDrop = async (e: React.DragEvent, newStage: string) => {
+  const onDrop = async (e: React.DragEvent<HTMLDivElement>, newStage: string) => {
     e.preventDefault()
-    e.stopPropagation()
     setDragOverStage(null)
 
-    if (draggedDeal && draggedDeal.stage !== newStage) {
-      await updateDealStage(draggedDeal.id, newStage)
+    const dealId = e.dataTransfer.getData('text/plain') || draggedDealId
+    if (!dealId) return
+
+    const deal = deals.find(d => d.id === dealId)
+    if (deal && deal.stage !== newStage) {
+      await updateDealStage(dealId, newStage)
       router.refresh()
     }
-    setDraggedDeal(null)
+
+    setDraggedDealId(null)
   }
 
   // Modal form content
@@ -325,14 +327,14 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
           return (
             <div
               key={stage.id}
-              className={`kanban-column ${isDragOver ? 'drag-over' : ''}`}
-              onDragOver={(e) => handleDragOver(e, stage.id)}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, stage.id)}
+              className="kanban-column"
+              onDragOver={(e) => onDragOver(e, stage.id)}
+              onDragLeave={onDragLeave}
+              onDrop={(e) => onDrop(e, stage.id)}
               style={{
-                transition: 'all 0.2s ease',
-                background: isDragOver ? 'rgba(0, 122, 255, 0.05)' : undefined,
-                borderColor: isDragOver ? '#007AFF' : undefined
+                background: isDragOver ? 'rgba(0, 122, 255, 0.08)' : undefined,
+                borderColor: isDragOver ? '#007AFF' : undefined,
+                transition: 'all 0.2s ease'
               }}
             >
               <div className="kanban-column-header">
@@ -351,42 +353,42 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
 
               <div
                 className="kanban-cards"
-                onDragOver={(e) => handleDragOver(e, stage.id)}
-                onDragLeave={(e) => handleDragLeave(e)}
-                onDrop={(e) => handleDrop(e, stage.id)}
                 style={{
                   background: isDragOver ? 'rgba(0, 122, 255, 0.05)' : undefined,
-                  transition: 'background 0.2s ease'
+                  minHeight: '100px'
                 }}
               >
                 {stageDeals.length > 0 ? (
                   stageDeals.map((deal) => {
                     const lead = deal.lead_id ? leadMap.get(deal.lead_id) : null
-                    const isDragging = draggedDeal?.id === deal.id
+                    const isDragging = draggedDealId === deal.id
 
                     return (
                       <div
                         key={deal.id}
                         className={`kanban-card group ${isDragging ? 'dragging' : ''}`}
-                        draggable={true}
-                        onDragStart={(e) => handleDragStart(e, deal)}
-                        onDragEnd={handleDragEnd}
+                        draggable
+                        onDragStart={(e) => onDragStart(e, deal.id)}
+                        onDragEnd={onDragEnd}
                         style={{
-                          cursor: 'grab',
                           opacity: isDragging ? 0.5 : 1,
-                          transform: isDragging ? 'rotate(3deg)' : undefined
+                          transform: isDragging ? 'rotate(2deg) scale(1.02)' : undefined,
+                          boxShadow: isDragging ? '0 8px 24px rgba(0,0,0,0.15)' : undefined,
+                          transition: 'transform 0.1s, box-shadow 0.1s'
                         }}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2 flex-1 min-w-0">
                             <GripVertical
                               size={14}
-                              className="text-muted flex-shrink-0 opacity-0 group-hover:opacity-50 transition-opacity"
+                              className="text-muted flex-shrink-0 cursor-grab"
+                              style={{ opacity: 0.4 }}
                             />
                             <div className="kanban-card-title truncate">{deal.name}</div>
                           </div>
                           <button
-                            onClick={(e) => { e.stopPropagation(); openEditModal(deal); }}
+                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); openEditModal(deal); }}
+                            onMouseDown={(e) => e.stopPropagation()}
                             className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-[var(--color-bg-secondary)] text-muted hover:text-[var(--color-text)] transition-all"
                           >
                             <Edit2 size={14} />
@@ -416,21 +418,20 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
                   })
                 ) : (
                   <div
-                    className="text-center py-8 text-muted text-sm border-2 border-dashed border-[var(--border-light)] rounded-lg"
-                    onDragOver={(e) => handleDragOver(e, stage.id)}
-                    onDrop={(e) => handleDrop(e, stage.id)}
+                    className="text-center py-8 text-muted text-sm border-2 border-dashed rounded-lg"
                     style={{
-                      background: isDragOver ? 'rgba(0, 122, 255, 0.05)' : undefined,
+                      borderColor: isDragOver ? '#007AFF' : 'var(--color-border)',
+                      background: isDragOver ? 'rgba(0, 122, 255, 0.08)' : undefined,
                       minHeight: '100px'
                     }}
                   >
-                    {isDragOver ? 'Hier ablegen' : 'Keine Deals'}
+                    {isDragOver ? '✓ Hier ablegen' : 'Keine Deals'}
                   </div>
                 )}
 
                 {/* Add Deal Button */}
                 <button
-                  className="w-full py-3 border-2 border-dashed border-[var(--border-light)] rounded-lg text-muted text-sm hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] transition-colors"
+                  className="w-full py-3 border-2 border-dashed border-[var(--color-border)] rounded-lg text-muted text-sm hover:border-[#007AFF] hover:text-[#007AFF] transition-colors"
                   onClick={() => { resetForm(); setIsModalOpen(true); }}
                 >
                   <Plus size={16} className="inline mr-1" />
