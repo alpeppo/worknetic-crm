@@ -335,7 +335,12 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
                 </div>
               </div>
 
-              <div className="kanban-cards">
+              <div
+                className="kanban-cards"
+                onDragOver={(e) => handleDragOver(e, stage.id)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, stage.id)}
+              >
                 {stageDeals.length > 0 ? (
                   stageDeals.map((deal) => {
                     const lead = deal.lead_id ? leadMap.get(deal.lead_id) : null
@@ -348,10 +353,13 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
                         draggable
                         onDragStart={(e) => handleDragStart(e, deal)}
                         onDragEnd={handleDragEnd}
+                        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); handleDragOver(e, stage.id); }}
+                        onDrop={(e) => { e.stopPropagation(); handleDrop(e, stage.id); }}
                         style={{
                           cursor: 'grab',
                           opacity: isDragging ? 0.5 : 1,
-                          transform: isDragging ? 'rotate(3deg)' : undefined
+                          transform: isDragging ? 'rotate(3deg)' : undefined,
+                          pointerEvents: isDragging ? 'none' : 'auto'
                         }}
                       >
                         <div className="flex items-start justify-between gap-2">
@@ -394,8 +402,11 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
                 ) : (
                   <div
                     className="text-center py-8 text-muted text-sm border-2 border-dashed border-[var(--border-light)] rounded-lg"
+                    onDragOver={(e) => handleDragOver(e, stage.id)}
+                    onDrop={(e) => handleDrop(e, stage.id)}
                     style={{
-                      background: isDragOver ? 'rgba(0, 122, 255, 0.05)' : undefined
+                      background: isDragOver ? 'rgba(0, 122, 255, 0.05)' : undefined,
+                      minHeight: '100px'
                     }}
                   >
                     {isDragOver ? 'Hier ablegen' : 'Keine Deals'}

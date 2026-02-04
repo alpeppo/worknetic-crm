@@ -426,7 +426,7 @@ export function LeadsClient({
                   borderRadius: '14px',
                   padding: '8px',
                   boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
-                  zIndex: 50
+                  zIndex: 100
                 }}
               >
                 <button
@@ -722,7 +722,7 @@ export function LeadsClient({
                               borderRadius: '14px',
                               padding: '8px',
                               boxShadow: '0 12px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06)',
-                              zIndex: 50
+                              zIndex: 100
                             }}
                           >
                             {STAGES.map((stage) => (

@@ -884,7 +884,7 @@ td {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 1000;
   padding: 24px;
   animation: fadeIn 0.2s var(--ease-out);
 }
@@ -900,6 +900,8 @@ td {
   border-radius: var(--radius-2xl);
   box-shadow: var(--shadow-xl);
   animation: slideUp 0.3s var(--ease-spring);
+  position: relative;
+  z-index: 1001;
 }
 
 @keyframes slideUp {
