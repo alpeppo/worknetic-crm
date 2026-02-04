@@ -19,7 +19,7 @@ jobs:
           script: |
             cd /docker/crm-app-src
             git pull origin main
-            docker build \
+            docker build --no-cache \
               --build-arg NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }} \
               --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }} \
               -t crm-app:latest .
