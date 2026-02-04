@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   crm-app:
-    image: ghcr.io/YOUR_GITHUB_USERNAME/crm-app:main
+    image: crm-app:latest
     container_name: crm-app
     restart: unless-stopped
     environment:

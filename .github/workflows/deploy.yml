@@ -23,6 +23,9 @@ jobs:
               --build-arg NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }} \
               --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }} \
               -t crm-app:latest .
+            # Sync docker-compose.server.yml to deployment directory
+            cp /docker/crm-app-src/docker-compose.server.yml /docker/crm-app/docker-compose.yml
             cd /docker/crm-app
-            docker compose up -d --force-recreate
+            docker compose down
+            docker compose up -d
             docker image prune -f
