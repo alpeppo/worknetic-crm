@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  crm-app:
+    image: ghcr.io/YOUR_GITHUB_USERNAME/crm-app:main
+    container_name: crm-app
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    networks:
+      - traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.crm.rule=Host(`crm.worknetic.de`)"
+      - "traefik.http.routers.crm.entrypoints=websecure"
+      - "traefik.http.routers.crm.tls=true"
+      - "traefik.http.routers.crm.tls.certresolver=letsencrypt"
+      - "traefik.http.services.crm.loadbalancer.server.port=3000"
+
+networks:
+  traefik-network:
+    external: true
