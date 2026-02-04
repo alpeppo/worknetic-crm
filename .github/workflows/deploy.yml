@@ -26,6 +26,8 @@ jobs:
             # Sync docker-compose.server.yml to deployment directory
             cp /docker/crm-app-src/docker-compose.server.yml /docker/crm-app/docker-compose.yml
             cd /docker/crm-app
+            # Ensure traefik network exists
+            docker network create traefik-network || true
             # Stop and remove the container, then recreate with new image
             docker stop crm-app || true
             docker rm crm-app || true
