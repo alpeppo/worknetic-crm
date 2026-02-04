@@ -442,18 +442,20 @@ export async function searchLeads(query: string) {
 export async function getDirectiveContent(directivePath: string) {
   try {
     // Fetch directive content from database instead of filesystem
+    // Use limit(1) instead of single() to handle cases where multiple verticals
+    // share the same directive_path
     const { data, error } = await supabase
       .from('verticals')
       .select('directive_content')
       .eq('directive_path', directivePath)
-      .single()
+      .limit(1)
 
-    if (error || !data?.directive_content) {
+    if (error || !data || data.length === 0 || !data[0]?.directive_content) {
       console.error('Error fetching directive:', error)
       return { success: false, error: 'Direktive konnte nicht geladen werden' }
     }
 
-    return { success: true, content: data.directive_content }
+    return { success: true, content: data[0].directive_content }
   } catch (error) {
     console.error('Error reading directive:', error)
     return { success: false, error: 'Direktive konnte nicht geladen werden' }
