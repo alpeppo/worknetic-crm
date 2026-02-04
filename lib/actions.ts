@@ -439,30 +439,21 @@ export async function searchLeads(query: string) {
 // DIRECTIVE ACTIONS
 // ============================================
 
-import { promises as fs } from 'fs'
-import path from 'path'
-
 export async function getDirectiveContent(directivePath: string) {
   try {
-    // Base path - parent of crm-app (the workspace root)
-    const workspaceRoot = path.resolve(process.cwd(), '..')
+    // Fetch directive content from database instead of filesystem
+    const { data, error } = await supabase
+      .from('verticals')
+      .select('directive_content')
+      .eq('directive_path', directivePath)
+      .single()
 
-    // Normalize the path - remove any leading slashes or dots
-    const normalizedPath = path.normalize(directivePath).replace(/^\.\.\/|^\//, '')
-    const fullPath = path.join(workspaceRoot, normalizedPath)
-
-    // Security check: ensure the resolved path is within the workspace
-    if (!fullPath.startsWith(workspaceRoot)) {
-      return { success: false, error: 'Invalid path' }
+    if (error || !data?.directive_content) {
+      console.error('Error fetching directive:', error)
+      return { success: false, error: 'Direktive konnte nicht geladen werden' }
     }
 
-    // Additional security: only allow .md files
-    if (!fullPath.endsWith('.md')) {
-      return { success: false, error: 'Invalid file type' }
-    }
-
-    const content = await fs.readFile(fullPath, 'utf-8')
-    return { success: true, content }
+    return { success: true, content: data.directive_content }
   } catch (error) {
     console.error('Error reading directive:', error)
     return { success: false, error: 'Direktive konnte nicht geladen werden' }
