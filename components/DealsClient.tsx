@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Modal } from './Modal'
 import { createDeal, updateDealStage, updateDeal } from '@/lib/actions'
 import { Plus, Loader2, GripVertical, Edit2 } from 'lucide-react'
@@ -37,6 +38,7 @@ const STAGES = [
 ]
 
 export function DealsClient({ deals, leads, headerOnly = false }: DealsClientProps) {
+  const router = useRouter()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -110,6 +112,7 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
         if (result.success) {
           setIsModalOpen(false)
           resetForm()
+          router.refresh()
         } else {
           setError(result.error || 'Ein Fehler ist aufgetreten')
         }
@@ -126,6 +129,7 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
         if (result.success) {
           setIsModalOpen(false)
           resetForm()
+          router.refresh()
         } else {
           setError(result.error || 'Ein Fehler ist aufgetreten')
         }
@@ -157,20 +161,30 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
 
   const handleDragOver = (e: React.DragEvent, stageId: string) => {
     e.preventDefault()
+    e.stopPropagation()
     e.dataTransfer.dropEffect = 'move'
-    setDragOverStage(stageId)
+    if (dragOverStage !== stageId) {
+      setDragOverStage(stageId)
+    }
   }
 
-  const handleDragLeave = () => {
-    setDragOverStage(null)
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    // Only clear if we're leaving the column entirely
+    const relatedTarget = e.relatedTarget as HTMLElement
+    if (!relatedTarget || !e.currentTarget.contains(relatedTarget)) {
+      setDragOverStage(null)
+    }
   }
 
   const handleDrop = async (e: React.DragEvent, newStage: string) => {
     e.preventDefault()
+    e.stopPropagation()
     setDragOverStage(null)
 
     if (draggedDeal && draggedDeal.stage !== newStage) {
       await updateDealStage(draggedDeal.id, newStage)
+      router.refresh()
     }
     setDraggedDeal(null)
   }
@@ -338,8 +352,12 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
               <div
                 className="kanban-cards"
                 onDragOver={(e) => handleDragOver(e, stage.id)}
-                onDragLeave={handleDragLeave}
+                onDragLeave={(e) => handleDragLeave(e)}
                 onDrop={(e) => handleDrop(e, stage.id)}
+                style={{
+                  background: isDragOver ? 'rgba(0, 122, 255, 0.05)' : undefined,
+                  transition: 'background 0.2s ease'
+                }}
               >
                 {stageDeals.length > 0 ? (
                   stageDeals.map((deal) => {
@@ -350,16 +368,13 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
                       <div
                         key={deal.id}
                         className={`kanban-card group ${isDragging ? 'dragging' : ''}`}
-                        draggable
+                        draggable={true}
                         onDragStart={(e) => handleDragStart(e, deal)}
                         onDragEnd={handleDragEnd}
-                        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); handleDragOver(e, stage.id); }}
-                        onDrop={(e) => { e.stopPropagation(); handleDrop(e, stage.id); }}
                         style={{
                           cursor: 'grab',
                           opacity: isDragging ? 0.5 : 1,
-                          transform: isDragging ? 'rotate(3deg)' : undefined,
-                          pointerEvents: isDragging ? 'none' : 'auto'
+                          transform: isDragging ? 'rotate(3deg)' : undefined
                         }}
                       >
                         <div className="flex items-start justify-between gap-2">

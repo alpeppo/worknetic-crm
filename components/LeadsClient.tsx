@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Modal } from './Modal'
 import { LeadForm } from './LeadForm'
 import { updateLeadStage, deleteLead, markLeadReviewed } from '@/lib/actions'
@@ -95,6 +96,7 @@ export function LeadsClient({
   readyCount,
   verticals = []
 }: LeadsClientProps) {
+  const router = useRouter()
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingLead, setEditingLead] = useState<Lead | null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
@@ -148,22 +150,25 @@ export function LeadsClient({
 
   const handleStageChange = async (leadId: string, newStage: string) => {
     setIsLoading(leadId)
-    await updateLeadStage(leadId, newStage)
     setActiveDropdown(null)
+    await updateLeadStage(leadId, newStage)
+    router.refresh()
     setIsLoading(null)
   }
 
   const handleDelete = async (leadId: string) => {
     if (!confirm('Lead wirklich löschen?')) return
     setIsLoading(leadId)
-    await deleteLead(leadId)
     setActiveDropdown(null)
+    await deleteLead(leadId)
+    router.refresh()
     setIsLoading(null)
   }
 
   const handleMarkReviewed = async (leadId: string, reviewed: boolean) => {
     setIsLoading(leadId)
     await markLeadReviewed(leadId, reviewed)
+    router.refresh()
     setIsLoading(null)
   }
 
