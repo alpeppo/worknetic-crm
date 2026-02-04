@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { Modal } from './Modal'
-import { createDeal, updateDealStage } from '@/lib/actions'
-import { Plus, Loader2 } from 'lucide-react'
+import { createDeal, updateDealStage, updateDeal } from '@/lib/actions'
+import { Plus, Loader2, GripVertical, Edit2 } from 'lucide-react'
 
 interface Deal {
   id: string
@@ -13,6 +13,7 @@ interface Deal {
   value: number
   probability?: number
   expected_close_date?: string
+  notes?: string
 }
 
 interface Lead {
@@ -39,12 +40,16 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [editingDeal, setEditingDeal] = useState<Deal | null>(null)
+  const [draggedDeal, setDraggedDeal] = useState<Deal | null>(null)
+  const [dragOverStage, setDragOverStage] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     lead_id: '',
     name: '',
     value: '',
     probability: '50',
-    expected_close_date: ''
+    expected_close_date: '',
+    notes: ''
   })
 
   const leadMap = new Map(leads.map(l => [l.id, l]))
@@ -62,6 +67,25 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
     return acc
   }, {} as Record<string, number>)
 
+  const resetForm = () => {
+    setFormData({ lead_id: '', name: '', value: '', probability: '50', expected_close_date: '', notes: '' })
+    setEditingDeal(null)
+    setError(null)
+  }
+
+  const openEditModal = (deal: Deal) => {
+    setEditingDeal(deal)
+    setFormData({
+      lead_id: deal.lead_id,
+      name: deal.name,
+      value: deal.value.toString(),
+      probability: (deal.probability || 50).toString(),
+      expected_close_date: deal.expected_close_date || '',
+      notes: deal.notes || ''
+    })
+    setIsModalOpen(true)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.lead_id || !formData.name || !formData.value) {
@@ -73,32 +97,85 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
     setError(null)
 
     try {
-      const result = await createDeal({
-        lead_id: formData.lead_id,
-        name: formData.name,
-        value: parseFloat(formData.value),
-        probability: parseInt(formData.probability),
-        expected_close_date: formData.expected_close_date || undefined
-      })
+      if (editingDeal) {
+        // Update existing deal
+        const result = await updateDeal(editingDeal.id, {
+          name: formData.name,
+          value: parseFloat(formData.value),
+          probability: parseInt(formData.probability),
+          expected_close_date: formData.expected_close_date || undefined,
+          notes: formData.notes || undefined
+        })
 
-      if (result.success) {
-        setIsModalOpen(false)
-        setFormData({ lead_id: '', name: '', value: '', probability: '50', expected_close_date: '' })
+        if (result.success) {
+          setIsModalOpen(false)
+          resetForm()
+        } else {
+          setError(result.error || 'Ein Fehler ist aufgetreten')
+        }
       } else {
-        setError(result.error || 'Ein Fehler ist aufgetreten')
+        // Create new deal
+        const result = await createDeal({
+          lead_id: formData.lead_id,
+          name: formData.name,
+          value: parseFloat(formData.value),
+          probability: parseInt(formData.probability),
+          expected_close_date: formData.expected_close_date || undefined
+        })
+
+        if (result.success) {
+          setIsModalOpen(false)
+          resetForm()
+        } else {
+          setError(result.error || 'Ein Fehler ist aufgetreten')
+        }
       }
-    } catch (err) {
+    } catch {
       setError('Ein unerwarteter Fehler ist aufgetreten')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleStageChange = async (dealId: string, newStage: string) => {
-    await updateDealStage(dealId, newStage)
+  // Drag & Drop handlers
+  const handleDragStart = (e: React.DragEvent, deal: Deal) => {
+    setDraggedDeal(deal)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', deal.id)
+    setTimeout(() => {
+      const element = e.target as HTMLElement
+      element.style.opacity = '0.5'
+    }, 0)
   }
 
-  // Modal form content - reusable
+  const handleDragEnd = (e: React.DragEvent) => {
+    const element = e.target as HTMLElement
+    element.style.opacity = '1'
+    setDraggedDeal(null)
+    setDragOverStage(null)
+  }
+
+  const handleDragOver = (e: React.DragEvent, stageId: string) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverStage(stageId)
+  }
+
+  const handleDragLeave = () => {
+    setDragOverStage(null)
+  }
+
+  const handleDrop = async (e: React.DragEvent, newStage: string) => {
+    e.preventDefault()
+    setDragOverStage(null)
+
+    if (draggedDeal && draggedDeal.stage !== newStage) {
+      await updateDealStage(draggedDeal.id, newStage)
+    }
+    setDraggedDeal(null)
+  }
+
+  // Modal form content
   const modalContent = (
     <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
@@ -113,6 +190,7 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
           onChange={(e) => setFormData({ ...formData, lead_id: e.target.value })}
           className="form-input"
           required
+          disabled={!!editingDeal}
         >
           <option value="">Lead auswählen...</option>
           {leads.map((lead) => (
@@ -169,11 +247,21 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
           className="form-input"
         />
       </div>
+      <div>
+        <label className="form-label">Notizen</label>
+        <textarea
+          value={formData.notes}
+          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+          className="form-input"
+          rows={3}
+          placeholder="Zusätzliche Informationen zum Deal..."
+        />
+      </div>
       <div className="flex justify-end gap-3 pt-4 border-t border-[var(--border-light)]">
         <button
           type="button"
           className="btn btn-secondary"
-          onClick={() => setIsModalOpen(false)}
+          onClick={() => { setIsModalOpen(false); resetForm(); }}
         >
           Abbrechen
         </button>
@@ -181,10 +269,10 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
           {isLoading ? (
             <>
               <Loader2 size={16} className="animate-spin" />
-              Erstellen...
+              {editingDeal ? 'Speichern...' : 'Erstellen...'}
             </>
           ) : (
-            'Deal erstellen'
+            editingDeal ? 'Speichern' : 'Deal erstellen'
           )}
         </button>
       </div>
@@ -195,14 +283,14 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
   if (headerOnly) {
     return (
       <>
-        <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
+        <button className="btn btn-primary" onClick={() => { resetForm(); setIsModalOpen(true); }}>
           <Plus size={18} />
           Deal erstellen
         </button>
         <Modal
           isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          title="Neuen Deal erstellen"
+          onClose={() => { setIsModalOpen(false); resetForm(); }}
+          title={editingDeal ? 'Deal bearbeiten' : 'Neuen Deal erstellen'}
           size="md"
         >
           {modalContent}
@@ -218,9 +306,21 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
         {STAGES.map((stage) => {
           const stageDeals = dealsByStage[stage.id] || []
           const stageValue = stageValues[stage.id] || 0
+          const isDragOver = dragOverStage === stage.id
 
           return (
-            <div key={stage.id} className="kanban-column">
+            <div
+              key={stage.id}
+              className={`kanban-column ${isDragOver ? 'drag-over' : ''}`}
+              onDragOver={(e) => handleDragOver(e, stage.id)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, stage.id)}
+              style={{
+                transition: 'all 0.2s ease',
+                background: isDragOver ? 'rgba(0, 122, 255, 0.05)' : undefined,
+                borderColor: isDragOver ? '#007AFF' : undefined
+              }}
+            >
               <div className="kanban-column-header">
                 <div className="kanban-column-title">
                   <span
@@ -239,9 +339,36 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
                 {stageDeals.length > 0 ? (
                   stageDeals.map((deal) => {
                     const lead = deal.lead_id ? leadMap.get(deal.lead_id) : null
+                    const isDragging = draggedDeal?.id === deal.id
+
                     return (
-                      <div key={deal.id} className="kanban-card">
-                        <div className="kanban-card-title">{deal.name}</div>
+                      <div
+                        key={deal.id}
+                        className={`kanban-card group ${isDragging ? 'dragging' : ''}`}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, deal)}
+                        onDragEnd={handleDragEnd}
+                        style={{
+                          cursor: 'grab',
+                          opacity: isDragging ? 0.5 : 1,
+                          transform: isDragging ? 'rotate(3deg)' : undefined
+                        }}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <GripVertical
+                              size={14}
+                              className="text-muted flex-shrink-0 opacity-0 group-hover:opacity-50 transition-opacity"
+                            />
+                            <div className="kanban-card-title truncate">{deal.name}</div>
+                          </div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openEditModal(deal); }}
+                            className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-[var(--color-bg-secondary)] text-muted hover:text-[var(--color-text)] transition-all"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                        </div>
                         <div className="kanban-card-company">
                           {lead?.company || lead?.name || 'Kein Lead'}
                         </div>
@@ -265,15 +392,20 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
                     )
                   })
                 ) : (
-                  <div className="text-center py-8 text-muted text-sm">
-                    Keine Deals
+                  <div
+                    className="text-center py-8 text-muted text-sm border-2 border-dashed border-[var(--border-light)] rounded-lg"
+                    style={{
+                      background: isDragOver ? 'rgba(0, 122, 255, 0.05)' : undefined
+                    }}
+                  >
+                    {isDragOver ? 'Hier ablegen' : 'Keine Deals'}
                   </div>
                 )}
 
                 {/* Add Deal Button */}
                 <button
                   className="w-full py-3 border-2 border-dashed border-[var(--border-light)] rounded-lg text-muted text-sm hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] transition-colors"
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={() => { resetForm(); setIsModalOpen(true); }}
                 >
                   <Plus size={16} className="inline mr-1" />
                   Deal hinzufügen
@@ -309,11 +441,11 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
         </div>
       )}
 
-      {/* Create Deal Modal */}
+      {/* Create/Edit Deal Modal */}
       <Modal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Neuen Deal erstellen"
+        onClose={() => { setIsModalOpen(false); resetForm(); }}
+        title={editingDeal ? 'Deal bearbeiten' : 'Neuen Deal erstellen'}
         size="md"
       >
         {modalContent}

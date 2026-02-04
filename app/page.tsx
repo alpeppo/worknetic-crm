@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { supabase } from '@/lib/supabase';
 import { Header } from '@/components/Header';
+import { TodosClient } from '@/components/TodosClient';
 import {
   TrendingUp,
   Users,
@@ -16,18 +17,20 @@ import {
   CheckCircle2,
   Circle,
   Clock,
-  Zap
+  Zap,
+  ListTodo
 } from 'lucide-react';
 
 export default async function Dashboard() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const [leadsResult, dealsResult, activitiesResult, followUpsResult] = await Promise.all([
+  const [leadsResult, dealsResult, activitiesResult, followUpsResult, todosResult] = await Promise.all([
     supabase.from('leads').select('id, name, company, qualified, lead_score, stage, created_at, linkedin_url, next_follow_up_at, outreach_priority', { count: 'exact' }).is('deleted_at', null).order('lead_score', { ascending: false }).limit(10),
     supabase.from('deals').select('id, name, stage, value, probability, lead_id', { count: 'exact' }),
     supabase.from('activities').select('id, type, subject, created_at, lead_id, created_by').order('created_at', { ascending: false }).limit(8),
-    supabase.from('leads').select('id, name, company, lead_score, next_follow_up_at, stage').is('deleted_at', null).not('next_follow_up_at', 'is', null).order('next_follow_up_at', { ascending: true }).limit(5)
+    supabase.from('leads').select('id, name, company, lead_score, next_follow_up_at, stage').is('deleted_at', null).not('next_follow_up_at', 'is', null).order('next_follow_up_at', { ascending: true }).limit(5),
+    supabase.from('todos').select('*').order('created_at', { ascending: false })
   ]);
 
   const totalLeads = leadsResult.count || 0;
@@ -44,6 +47,7 @@ export default async function Dashboard() {
 
   const activities = activitiesResult.data || [];
   const followUps = followUpsResult.data || [];
+  const todos = todosResult.data || [];
 
   const stages = [
     { id: 'new', name: 'Neu', color: '#86868b' },
@@ -602,6 +606,50 @@ export default async function Dashboard() {
                   </div>
                   <ChevronRight size={18} style={{ color: 'var(--color-text-tertiary)', opacity: 0 }} className="group-hover:opacity-100" />
                 </Link>
+              </div>
+            </div>
+
+            {/* To-Do */}
+            <div
+              style={{
+                background: 'var(--color-bg)',
+                borderRadius: '20px',
+                border: '1px solid var(--color-border)',
+                overflow: 'hidden',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+              }}
+            >
+              <div
+                style={{
+                  padding: '24px',
+                  borderBottom: '1px solid var(--color-border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '12px',
+                      background: 'rgba(88, 86, 214, 0.1)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <ListTodo size={20} style={{ color: '#5856D6' }} />
+                  </div>
+                  <h2 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--color-text)' }}>To-Do</h2>
+                </div>
+                <span style={{ fontSize: '13px', color: 'var(--color-text-tertiary)' }}>
+                  {todos.filter(t => !t.completed).length} offen
+                </span>
+              </div>
+              <div style={{ padding: '20px 24px' }}>
+                <TodosClient todos={todos} />
               </div>
             </div>
 

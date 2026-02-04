@@ -293,6 +293,26 @@ export async function createDeal(data: DealFormData) {
   return { success: true, deal: { id: dealId } }
 }
 
+export async function updateDeal(id: string, data: Partial<DealFormData>) {
+  const { error } = await supabase
+    .from('deals')
+    .update({
+      ...data,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error updating deal:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/deals')
+  revalidatePath('/')
+
+  return { success: true }
+}
+
 export async function updateDealStage(id: string, stage: string) {
   const updateData: Record<string, unknown> = {
     stage,
@@ -318,6 +338,77 @@ export async function updateDealStage(id: string, stage: string) {
   }
 
   revalidatePath('/deals')
+  revalidatePath('/')
+
+  return { success: true }
+}
+
+// ============================================
+// TODO ACTIONS
+// ============================================
+
+export type TodoFormData = {
+  title: string
+  description?: string
+  due_date?: string
+  priority?: 'low' | 'medium' | 'high'
+  lead_id?: string
+  deal_id?: string
+}
+
+export async function createTodo(data: TodoFormData) {
+  const { data: todo, error } = await supabase
+    .from('todos')
+    .insert({
+      ...data,
+      completed: false,
+      created_by: 'user',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error creating todo:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/')
+
+  return { success: true, todo }
+}
+
+export async function toggleTodo(id: string, completed: boolean) {
+  const { error } = await supabase
+    .from('todos')
+    .update({
+      completed,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error toggling todo:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/')
+
+  return { success: true }
+}
+
+export async function deleteTodo(id: string) {
+  const { error } = await supabase
+    .from('todos')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error deleting todo:', error)
+    return { success: false, error: error.message }
+  }
+
   revalidatePath('/')
 
   return { success: true }

@@ -22,7 +22,8 @@ import {
   Flame,
   Star,
   Crown,
-  TrendingUp
+  TrendingUp,
+  Target
 } from 'lucide-react'
 
 interface Lead {
@@ -53,6 +54,12 @@ interface Lead {
   created_at: string
 }
 
+interface Vertical {
+  id: string
+  name: string
+  color?: string
+}
+
 interface LeadsClientProps {
   leads: Lead[]
   totalLeads: number
@@ -61,11 +68,13 @@ interface LeadsClientProps {
   avgScore: string
   inboxCount: number
   readyCount: number
+  verticals?: Vertical[]
 }
 
 const STAGES = [
   { value: 'new', label: 'Neu', color: '#86868b' },
   { value: 'contacted', label: 'Kontaktiert', color: '#007AFF' },
+  { value: 'follow_up', label: 'Follow-up', color: '#5856D6' },
   { value: 'qualified', label: 'Qualifiziert', color: '#AF52DE' },
   { value: 'discovery_call', label: 'Discovery', color: '#FF9500' },
   { value: 'proposal_sent', label: 'Proposal', color: '#FF9500' },
@@ -83,14 +92,20 @@ export function LeadsClient({
   highScoreLeads,
   avgScore,
   inboxCount,
-  readyCount
+  readyCount,
+  verticals = []
 }: LeadsClientProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingLead, setEditingLead] = useState<Lead | null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<TabType>('inbox')
   const [filter, setFilter] = useState<string>('all')
+  const [verticalFilter, setVerticalFilter] = useState<string>('all')
   const [isLoading, setIsLoading] = useState<string | null>(null)
+
+  // Extract unique verticals from leads if not provided
+  const uniqueVerticals = verticals.length > 0 ? verticals :
+    [...new Set(leads.map(l => l.vertical).filter(Boolean))].map(v => ({ id: v!, name: v!, color: '#007AFF' }))
 
   const getLeadsByTab = () => {
     switch (activeTab) {
@@ -103,6 +118,10 @@ export function LeadsClient({
   const tabLeads = getLeadsByTab()
 
   const filteredLeads = tabLeads.filter(lead => {
+    // Vertical filter
+    if (verticalFilter !== 'all' && lead.vertical !== verticalFilter) return false
+
+    // Status filter
     if (filter === 'all') return true
     if (filter === 'qualified') return lead.qualified
     if (filter === 'high_score') return (lead.lead_score || 0) >= 7
@@ -369,7 +388,107 @@ export function LeadsClient({
       </div>
 
       {/* Filters - Modern Pill Style */}
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+        {/* Vertical Filter Dropdown */}
+        {uniqueVerticals.length > 0 && (
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setActiveDropdown(activeDropdown === 'vertical-filter' ? null : 'vertical-filter')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 14px',
+                borderRadius: '100px',
+                border: verticalFilter !== 'all' ? '1px solid #AF52DE' : '1px solid var(--color-border)',
+                background: verticalFilter !== 'all' ? 'rgba(175, 82, 222, 0.08)' : 'var(--color-bg)',
+                fontSize: '13px',
+                fontWeight: 500,
+                color: verticalFilter !== 'all' ? '#AF52DE' : 'var(--color-text-secondary)',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              <Target size={14} />
+              {verticalFilter === 'all' ? 'Zielgruppe' : uniqueVerticals.find(v => v.id === verticalFilter)?.name || verticalFilter}
+              <ChevronDown size={14} style={{ opacity: 0.6 }} />
+            </button>
+            {activeDropdown === 'vertical-filter' && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  marginTop: '8px',
+                  minWidth: '200px',
+                  background: 'var(--color-bg)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '14px',
+                  padding: '8px',
+                  boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
+                  zIndex: 50
+                }}
+              >
+                <button
+                  onClick={() => { setVerticalFilter('all'); setActiveDropdown(null); }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    width: '100%',
+                    padding: '10px 14px',
+                    background: verticalFilter === 'all' ? 'var(--color-bg-secondary)' : 'transparent',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    color: 'var(--color-text)',
+                    cursor: 'pointer',
+                    textAlign: 'left'
+                  }}
+                >
+                  Alle Zielgruppen
+                </button>
+                {uniqueVerticals.map((vertical) => (
+                  <button
+                    key={vertical.id}
+                    onClick={() => { setVerticalFilter(vertical.id); setActiveDropdown(null); }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      width: '100%',
+                      padding: '10px 14px',
+                      background: verticalFilter === vertical.id ? 'var(--color-bg-secondary)' : 'transparent',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      color: 'var(--color-text)',
+                      cursor: 'pointer',
+                      textAlign: 'left'
+                    }}
+                    className="hover:bg-[var(--color-bg-secondary)]"
+                  >
+                    <span
+                      style={{
+                        width: '10px',
+                        height: '10px',
+                        borderRadius: '50%',
+                        background: vertical.color || '#AF52DE'
+                      }}
+                    />
+                    {vertical.name}
+                    <span style={{ marginLeft: 'auto', fontSize: '12px', color: 'var(--color-text-tertiary)' }}>
+                      {leads.filter(l => l.vertical === vertical.id).length}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div style={{ width: '1px', height: '24px', background: 'var(--color-border)', margin: '0 6px' }} />
+
         <button
           onClick={() => setFilter('all')}
           style={{
