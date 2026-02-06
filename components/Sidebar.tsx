@@ -7,6 +7,7 @@ import { clsx } from 'clsx'
 import { Modal } from './Modal'
 import { LeadForm } from './LeadForm'
 import { createSupabaseBrowser } from '@/lib/supabase-browser'
+import { useTheme } from './ThemeProvider'
 import {
   LayoutDashboard,
   Users,
@@ -26,7 +27,9 @@ import {
   Calendar,
   Inbox,
   Zap,
-  LogOut
+  LogOut,
+  Moon,
+  Sun
 } from 'lucide-react'
 
 const mainNavigation = [
@@ -54,6 +57,7 @@ const quickAddOptions = [
 export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
+  const { theme, toggleTheme } = useTheme()
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false)
 
@@ -178,6 +182,14 @@ export function Sidebar() {
             <Settings size={18} />
             <span className="text-sm font-medium">Einstellungen</span>
           </Link>
+          <button
+            onClick={toggleTheme}
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-[rgba(255,255,255,0.6)] hover:text-white hover:bg-[rgba(255,255,255,0.06)] transition-all w-full"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            <span className="text-sm font-medium">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+          </button>
           <button
             onClick={async () => {
               const supabase = createSupabaseBrowser()

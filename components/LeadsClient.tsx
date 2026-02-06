@@ -27,7 +27,9 @@ import {
   Crown,
   TrendingUp,
   Target,
-  X
+  X,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 
 interface Lead {
@@ -73,6 +75,9 @@ interface LeadsClientProps {
   inboxCount: number
   readyCount: number
   verticals?: Vertical[]
+  totalCount: number
+  currentPage: number
+  pageSize: number
 }
 
 const STAGES = [
@@ -97,7 +102,10 @@ export function LeadsClient({
   avgScore,
   inboxCount,
   readyCount,
-  verticals = []
+  verticals = [],
+  totalCount,
+  currentPage,
+  pageSize
 }: LeadsClientProps) {
   const router = useRouter()
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -1033,6 +1041,148 @@ export function LeadsClient({
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Bar */}
+      {totalCount > pageSize && (() => {
+        const totalPages = Math.ceil(totalCount / pageSize)
+
+        const getPageNumbers = () => {
+          const pages: (number | 'ellipsis')[] = []
+          if (totalPages <= 5) {
+            for (let i = 1; i <= totalPages; i++) pages.push(i)
+          } else {
+            // Always show first page
+            pages.push(1)
+            if (currentPage > 3) {
+              pages.push('ellipsis')
+            }
+            // Pages around current
+            const start = Math.max(2, currentPage - 1)
+            const end = Math.min(totalPages - 1, currentPage + 1)
+            for (let i = start; i <= end; i++) pages.push(i)
+            if (currentPage < totalPages - 2) {
+              pages.push('ellipsis')
+            }
+            // Always show last page
+            pages.push(totalPages)
+          }
+          return pages
+        }
+
+        const pageNumbers = getPageNumbers()
+
+        return (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginTop: '20px',
+              padding: '16px 20px',
+              background: 'var(--color-bg)',
+              borderRadius: '16px',
+              border: '1px solid var(--color-border)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+            }}
+          >
+            <span style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', fontWeight: 500 }}>
+              Seite {currentPage} von {totalPages}
+            </span>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {/* Previous Button */}
+              <button
+                onClick={() => { if (currentPage > 1) router.push(`/leads?page=${currentPage - 1}`) }}
+                disabled={currentPage <= 1}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--color-border)',
+                  background: 'var(--color-bg)',
+                  color: currentPage <= 1 ? 'var(--color-text-tertiary)' : 'var(--color-text)',
+                  cursor: currentPage <= 1 ? 'not-allowed' : 'pointer',
+                  opacity: currentPage <= 1 ? 0.4 : 1,
+                  transition: 'all 0.2s'
+                }}
+              >
+                <ChevronLeft size={18} />
+              </button>
+
+              {/* Page Number Buttons */}
+              {pageNumbers.map((page, idx) =>
+                page === 'ellipsis' ? (
+                  <span
+                    key={`ellipsis-${idx}`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '36px',
+                      height: '36px',
+                      fontSize: '14px',
+                      color: 'var(--color-text-tertiary)'
+                    }}
+                  >
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    key={page}
+                    onClick={() => router.push(`/leads?page=${page}`)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '10px',
+                      border: page === currentPage ? '1px solid #007AFF' : '1px solid transparent',
+                      background: page === currentPage ? 'rgba(0, 122, 255, 0.08)' : 'transparent',
+                      fontSize: '14px',
+                      fontWeight: page === currentPage ? 600 : 500,
+                      color: page === currentPage ? '#007AFF' : 'var(--color-text-secondary)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {page}
+                  </button>
+                )
+              )}
+
+              {/* Next Button */}
+              <button
+                onClick={() => { if (currentPage < totalPages) router.push(`/leads?page=${currentPage + 1}`) }}
+                disabled={currentPage >= totalPages}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--color-border)',
+                  background: 'var(--color-bg)',
+                  color: currentPage >= totalPages ? 'var(--color-text-tertiary)' : 'var(--color-text)',
+                  cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer',
+                  opacity: currentPage >= totalPages ? 0.4 : 1,
+                  transition: 'all 0.2s'
+                }}
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+
+            <span style={{ fontSize: '13px', color: 'var(--color-text-tertiary)' }}>
+              {((currentPage - 1) * pageSize) + 1}–{Math.min(currentPage * pageSize, totalCount)} von {totalCount}
+            </span>
+          </div>
+        )
+      })()}
 
       <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Neuen Lead erstellen" size="lg">
         <LeadForm onSuccess={() => setIsCreateModalOpen(false)} onCancel={() => setIsCreateModalOpen(false)} />

@@ -3,23 +3,43 @@ import { Header } from '@/components/Header'
 import { LeadsClient } from '@/components/LeadsClient'
 import { Inbox } from 'lucide-react'
 
-export default async function LeadsPage() {
+const PAGE_SIZE = 25
+
+export default async function LeadsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>
+}) {
+  const params = await searchParams
+  const currentPage = Math.max(1, parseInt(params.page || '1', 10))
+  const from = (currentPage - 1) * PAGE_SIZE
+  const to = from + PAGE_SIZE - 1
+
+  // Fetch paginated leads
   const { data: leads, error, count } = await supabase
     .from('leads')
     .select('*', { count: 'exact' })
     .is('deleted_at', null)
     .order('lead_score', { ascending: false })
+    .range(from, to)
 
+  // Fetch aggregate stats separately (across all leads, not just the current page)
+  const { data: allLeadsForStats } = await supabase
+    .from('leads')
+    .select('qualified, lead_score, reviewed, outreach_priority, contact_score')
+    .is('deleted_at', null)
+
+  const allStats = allLeadsForStats || []
   const allLeads = leads || []
   const totalLeads = count || 0
-  const qualifiedLeads = allLeads.filter(l => l.qualified).length
-  const highScoreLeads = allLeads.filter(l => (l.lead_score || 0) >= 7).length
-  const avgScore = allLeads.length ?
-    (allLeads.reduce((sum, l) => sum + (l.lead_score || 0), 0) / allLeads.length).toFixed(1) : '0'
+  const qualifiedLeads = allStats.filter(l => l.qualified).length
+  const highScoreLeads = allStats.filter(l => (l.lead_score || 0) >= 7).length
+  const avgScore = allStats.length ?
+    (allStats.reduce((sum, l) => sum + (l.lead_score || 0), 0) / allStats.length).toFixed(1) : '0'
 
-  // Count inbox (not reviewed) and ready (reviewed) leads
-  const inboxCount = allLeads.filter(l => !l.reviewed).length
-  const readyCount = allLeads.filter(l => l.reviewed).length
+  // Count inbox (not reviewed) and ready (reviewed) leads across ALL leads
+  const inboxCount = allStats.filter(l => !l.reviewed).length
+  const readyCount = allStats.filter(l => l.reviewed).length
 
   return (
     <>
@@ -45,6 +65,9 @@ export default async function LeadsPage() {
           avgScore={avgScore}
           inboxCount={inboxCount}
           readyCount={readyCount}
+          totalCount={totalLeads}
+          currentPage={currentPage}
+          pageSize={PAGE_SIZE}
         />
       </div>
     </>

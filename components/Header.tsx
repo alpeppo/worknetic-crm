@@ -19,39 +19,33 @@ export function Header({ title, subtitle, actions }: HeaderProps) {
         </div>
       </div>
 
-      {/* Search - Modern Floating Style */}
+      {/* Search - Opens Command Palette */}
       <div className="header-center">
-        <div
+        <button
+          onClick={() => {
+            window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))
+          }}
           style={{
             position: 'relative',
             display: 'flex',
             alignItems: 'center',
+            gap: '10px',
+            width: '100%',
             background: 'var(--color-bg-secondary)',
             borderRadius: '14px',
             border: '1px solid var(--color-border)',
-            padding: '0 16px',
+            padding: '12px 16px',
             transition: 'all 0.2s ease',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+            cursor: 'pointer',
+            textAlign: 'left',
           }}
-          className="group hover:border-[var(--color-border-strong)] focus-within:border-[#007AFF] focus-within:shadow-[0_0_0_4px_rgba(0,122,255,0.1)]"
+          className="group hover:border-[var(--color-border-strong)] hover:shadow-md"
         >
           <Search size={18} style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }} />
-          <input
-            type="text"
-            placeholder="Suchen..."
-            style={{
-              flex: 1,
-              padding: '12px',
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              fontSize: '14px',
-              color: 'var(--color-text)',
-              width: '100%',
-              minWidth: '200px'
-            }}
-          />
-          {/* Keyboard Shortcut Badge */}
+          <span style={{ flex: 1, fontSize: '14px', color: 'var(--color-text-tertiary)', minWidth: '200px' }}>
+            Suchen...
+          </span>
           <div
             style={{
               display: 'flex',
@@ -67,7 +61,7 @@ export function Header({ title, subtitle, actions }: HeaderProps) {
             <Command size={11} style={{ color: 'var(--color-text-tertiary)' }} />
             <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--color-text-tertiary)' }}>K</span>
           </div>
-        </div>
+        </button>
       </div>
 
       <div className="header-right">
