@@ -196,7 +196,7 @@ Tim`,
 // MAIN EXPORT
 // ============================================
 
-const MODEL = 'perplexity/sonar'
+const MODEL = 'openai/gpt-5-mini'
 
 export async function generateOutreachEmail(
   input: EmailGenerationInput
