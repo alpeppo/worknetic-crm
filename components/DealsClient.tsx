@@ -52,11 +52,15 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
     notes: ''
   })
 
+  // Optimistic local deals state — allows instant UI updates on drag & drop
+  const [localDeals, setLocalDeals] = useState<Deal[]>(deals)
+  useEffect(() => { setLocalDeals(deals) }, [deals])
+
   const leadMap = new Map(leads.map(l => [l.id, l]))
 
-  // Group deals by stage
+  // Group deals by stage — uses localDeals for optimistic updates
   const dealsByStage = STAGES.reduce((acc, stage) => {
-    acc[stage.id] = deals.filter(d => d.stage === stage.id)
+    acc[stage.id] = localDeals.filter(d => d.stage === stage.id)
     return acc
   }, {} as Record<string, Deal[]>)
 
@@ -139,19 +143,35 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
 
   // Drag & Drop — Mouse-events based. No HTML5 DnD API at all.
   // Uses mousedown/mousemove/mouseup + elementFromPoint for 100% reliable drops.
+  // Optimistic UI: instantly moves card in localDeals, then syncs with server.
   const boardRef = useRef<HTMLDivElement>(null)
 
   const performDrop = useCallback(async (dealId: string, newStage: string) => {
-    const deal = deals.find(d => d.id === dealId)
-    if (deal && deal.stage !== newStage) {
-      await updateDealStage(dealId, newStage)
-      router.refresh()
+    const deal = localDeals.find(d => d.id === dealId)
+    if (!deal || deal.stage === newStage) return
+
+    // Optimistic update — move card immediately in UI
+    setLocalDeals(prev => prev.map(d =>
+      d.id === dealId ? { ...d, stage: newStage } : d
+    ))
+
+    // Server update
+    const result = await updateDealStage(dealId, newStage)
+    if (!result.success) {
+      // Revert on failure
+      setLocalDeals(prev => prev.map(d =>
+        d.id === dealId ? { ...d, stage: deal.stage } : d
+      ))
     }
-  }, [deals, router])
+    router.refresh()
+  }, [localDeals, router])
 
   useEffect(() => {
     const board = boardRef.current
     if (!board) return
+
+    // Track the current target stage during mousemove so mouseup can use it reliably
+    let currentTargetStage: string | null = null
 
     let drag: {
       dealId: string
@@ -190,6 +210,7 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
         startY: e.clientY,
         started: false,
       }
+      currentTargetStage = null
     }
 
     const onMouseMove = (e: MouseEvent) => {
@@ -237,35 +258,33 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
 
         board.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'))
         const col = el?.closest('[data-stage]')
-        if (col) col.classList.add('drag-over')
+        if (col) {
+          col.classList.add('drag-over')
+          currentTargetStage = col.getAttribute('data-stage')
+        } else {
+          currentTargetStage = null
+        }
       }
     }
 
-    const onMouseUp = (e: MouseEvent) => {
+    const onMouseUp = () => {
       if (!drag) return
 
       if (drag.started && drag.clone) {
-        // Find column under cursor
-        drag.clone.style.display = 'none'
-        const el = document.elementFromPoint(e.clientX, e.clientY)
-        drag.clone.style.display = ''
-
-        const col = el?.closest('[data-stage]')
-        const newStage = col?.getAttribute('data-stage')
-
-        // Clean up
+        // Clean up clone and visual state
         drag.clone.remove()
         drag.card.style.opacity = ''
         drag.card.style.transition = ''
         board.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'))
 
-        // Perform the stage update if dropped on a different column
-        if (newStage && newStage !== drag.sourceStage) {
-          performDrop(drag.dealId, newStage)
+        // Use the tracked target stage from mousemove (more reliable than elementFromPoint in mouseup)
+        if (currentTargetStage && currentTargetStage !== drag.sourceStage) {
+          performDrop(drag.dealId, currentTargetStage)
         }
       }
 
       drag = null
+      currentTargetStage = null
     }
 
     board.addEventListener('mousedown', onMouseDown)
