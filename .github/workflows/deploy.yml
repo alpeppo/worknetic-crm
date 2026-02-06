@@ -32,4 +32,6 @@ jobs:
             docker stop crm-app || true
             docker rm crm-app || true
             docker compose up -d
+            # Ensure Traefik can reach crm-app via traefik-network
+            docker network connect traefik-network root-traefik-1 || true
             docker image prune -f
