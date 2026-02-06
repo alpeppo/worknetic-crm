@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Modal } from './Modal'
 import { createDeal, updateDealStage, updateDeal } from '@/lib/actions'
@@ -139,60 +139,80 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
     }
   }
 
-  // Drag & Drop — bulletproof implementation using pointer-events: none
-  // During drag, all children of columns become transparent to pointer events,
-  // so ALL drag events fire directly on the column. No bubbling issues possible.
+  // Drag & Drop — pure DOM approach, no React state during drag to avoid re-render issues.
+  // Uses refs + direct DOM manipulation so the browser drag session is never interrupted.
   const draggedDealRef = useRef<string | null>(null)
+  const draggedCardRef = useRef<HTMLDivElement | null>(null)
+  const boardRef = useRef<HTMLDivElement>(null)
 
-  const onDragStart = useCallback((e: React.DragEvent<HTMLDivElement>, dealId: string) => {
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, dealId: string) => {
     draggedDealRef.current = dealId
-    setDraggedDealId(dealId)
+    draggedCardRef.current = e.currentTarget
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', dealId)
-  }, [])
+    // Delay visual feedback so browser captures the drag image first
+    requestAnimationFrame(() => {
+      draggedCardRef.current?.classList.add('dragging')
+    })
+  }
 
-  const onDragEnd = useCallback(() => {
+  const handleDragEnd = () => {
+    draggedCardRef.current?.classList.remove('dragging')
+    draggedCardRef.current = null
     draggedDealRef.current = null
+    // Remove all drag-over highlights
+    boardRef.current?.querySelectorAll('.drag-over').forEach(el => {
+      el.classList.remove('drag-over')
+    })
     setDraggedDealId(null)
     setDragOverStage(null)
-  }, [])
+  }
 
-  const onColumnDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
-  }, [])
+  }
 
-  const onColumnDragEnter = useCallback((e: React.DragEvent<HTMLDivElement>, stageId: string) => {
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>, stageId: string) => {
     e.preventDefault()
-    setDragOverStage(stageId)
-  }, [])
-
-  const onColumnDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>, stageId: string) => {
-    // Only clear if we're actually leaving the column (not entering a child)
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = e.clientX
-    const y = e.clientY
-    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
-      setDragOverStage((prev) => prev === stageId ? null : prev)
+    // Add visual highlight via DOM directly (no React re-render)
+    const col = (e.currentTarget as HTMLElement).closest('.kanban-column')
+    if (col) {
+      boardRef.current?.querySelectorAll('.kanban-column.drag-over').forEach(el => {
+        el.classList.remove('drag-over')
+      })
+      col.classList.add('drag-over')
     }
-  }, [])
+    setDragOverStage(stageId)
+  }
 
-  const onColumnDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>, newStage: string) => {
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>, newStage: string) => {
     e.preventDefault()
-    setDragOverStage(null)
+    // Clean up visuals
+    boardRef.current?.querySelectorAll('.drag-over').forEach(el => {
+      el.classList.remove('drag-over')
+    })
 
     const dealId = e.dataTransfer.getData('text/plain') || draggedDealRef.current
     if (!dealId) return
 
     const deal = deals.find(d => d.id === dealId)
     if (deal && deal.stage !== newStage) {
+      setDraggedDealId(null)
+      setDragOverStage(null)
+      draggedCardRef.current?.classList.remove('dragging')
+      draggedCardRef.current = null
+      draggedDealRef.current = null
       await updateDealStage(dealId, newStage)
       router.refresh()
+    } else {
+      draggedCardRef.current?.classList.remove('dragging')
+      draggedCardRef.current = null
+      draggedDealRef.current = null
+      setDraggedDealId(null)
+      setDragOverStage(null)
     }
-
-    draggedDealRef.current = null
-    setDraggedDealId(null)
-  }, [deals, router])
+  }
 
   // Modal form content
   const modalContent = (
@@ -321,7 +341,7 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
   return (
     <>
       {/* Kanban Board */}
-      <div className={`kanban-board ${draggedDealId ? 'is-dragging' : ''}`}>
+      <div className="kanban-board" ref={boardRef}>
         {STAGES.map((stage) => {
           const stageDeals = dealsByStage[stage.id] || []
           const stageValue = stageValues[stage.id] || 0
@@ -330,11 +350,10 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
           return (
             <div
               key={stage.id}
-              className={`kanban-column ${isDragOver ? 'drag-over' : ''}`}
-              onDragOver={onColumnDragOver}
-              onDragEnter={(e) => onColumnDragEnter(e, stage.id)}
-              onDragLeave={(e) => onColumnDragLeave(e, stage.id)}
-              onDrop={(e) => onColumnDrop(e, stage.id)}
+              className="kanban-column"
+              onDragOver={handleDragOver}
+              onDragEnter={(e) => handleDragEnter(e, stage.id)}
+              onDrop={(e) => handleDrop(e, stage.id)}
             >
               <div className="kanban-column-header">
                 <div className="kanban-column-title">
@@ -353,19 +372,20 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
               <div
                 className="kanban-cards"
                 style={{ minHeight: '100px' }}
+                onDragOver={handleDragOver}
               >
                 {stageDeals.length > 0 ? (
                   stageDeals.map((deal) => {
                     const lead = deal.lead_id ? leadMap.get(deal.lead_id) : null
-                    const isDragging = draggedDealId === deal.id
 
                     return (
                       <div
                         key={deal.id}
-                        className={`kanban-card group ${isDragging ? 'dragging' : ''}`}
-                        draggable
-                        onDragStart={(e) => onDragStart(e, deal.id)}
-                        onDragEnd={onDragEnd}
+                        className="kanban-card group"
+                        draggable={true}
+                        onDragStart={(e) => handleDragStart(e, deal.id)}
+                        onDragEnd={handleDragEnd}
+                        onDragOver={handleDragOver}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -426,15 +446,13 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
                 )}
 
                 {/* Add Deal Button */}
-                {!draggedDealId && (
-                  <button
-                    className="w-full py-3 border-2 border-dashed border-[var(--color-border)] rounded-lg text-muted text-sm hover:border-[#007AFF] hover:text-[#007AFF] transition-colors"
-                    onClick={() => { resetForm(); setIsModalOpen(true); }}
-                  >
-                    <Plus size={16} className="inline mr-1" />
-                    Deal hinzufügen
-                  </button>
-                )}
+                <button
+                  className="w-full py-3 border-2 border-dashed border-[var(--color-border)] rounded-lg text-muted text-sm hover:border-[#007AFF] hover:text-[#007AFF] transition-colors"
+                  onClick={() => { resetForm(); setIsModalOpen(true); }}
+                >
+                  <Plus size={16} className="inline mr-1" />
+                  Deal hinzufügen
+                </button>
               </div>
             </div>
           )
