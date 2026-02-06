@@ -686,6 +686,95 @@ export async function getReportData() {
 }
 
 // ============================================
+// WORKFLOW ACTIONS
+// ============================================
+
+export async function createWorkflow(data: {
+  name: string
+  description?: string
+  trigger_type: string
+  trigger_config: Record<string, unknown>
+  actions: Array<{ type: string; config: Record<string, unknown> }>
+}) {
+  const { data: workflow, error } = await supabase
+    .from('workflows')
+    .insert({
+      ...data,
+      active: true,
+      created_by: 'user',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error creating workflow:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/settings/workflows')
+  return { success: true, workflow }
+}
+
+export async function updateWorkflow(id: string, data: {
+  name?: string
+  description?: string
+  trigger_type?: string
+  trigger_config?: Record<string, unknown>
+  actions?: Array<{ type: string; config: Record<string, unknown> }>
+}) {
+  const { error } = await supabase
+    .from('workflows')
+    .update({
+      ...data,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error updating workflow:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/settings/workflows')
+  return { success: true }
+}
+
+export async function deleteWorkflow(id: string) {
+  const { error } = await supabase
+    .from('workflows')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error deleting workflow:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/settings/workflows')
+  return { success: true }
+}
+
+export async function toggleWorkflow(id: string, active: boolean) {
+  const { error } = await supabase
+    .from('workflows')
+    .update({
+      active,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error toggling workflow:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/settings/workflows')
+  return { success: true }
+}
+
+// ============================================
 // DIRECTIVE ACTIONS
 // ============================================
 

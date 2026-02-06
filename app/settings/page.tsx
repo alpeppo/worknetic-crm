@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { Header } from '@/components/Header'
-import { Mail, Users, Bell, Shield, Palette, Database, ChevronRight } from 'lucide-react'
+import { Mail, Users, Bell, Shield, Palette, Database, Zap, ChevronRight } from 'lucide-react'
 
 const settingsItems = [
   {
@@ -9,6 +9,13 @@ const settingsItems = [
     href: '/settings/templates',
     icon: Mail,
     color: '#007AFF'
+  },
+  {
+    name: 'Automatisierung',
+    description: 'Workflows und Regeln für automatische Aktionen',
+    href: '/settings/workflows',
+    icon: Zap,
+    color: '#FF9500'
   },
   {
     name: 'Team & Benutzer',
