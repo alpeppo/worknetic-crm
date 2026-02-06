@@ -3,6 +3,8 @@ import { Header } from '@/components/Header'
 import { DealsClient } from '@/components/DealsClient'
 import { TrendingUp, DollarSign, Briefcase, Target } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default async function DealsPage() {
   const { data: deals } = await supabase
     .from('deals')
