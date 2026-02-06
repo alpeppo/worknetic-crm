@@ -28,11 +28,18 @@ export interface GeneratedEmail {
 }
 
 // ============================================
-// OPENAI CLIENT
+// OPENROUTER CLIENT
 // ============================================
 
-function getOpenAIClient() {
-  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+function getOpenRouterClient() {
+  return new OpenAI({
+    apiKey: process.env.OPENROUTER_API_KEY,
+    baseURL: 'https://openrouter.ai/api/v1',
+    defaultHeaders: {
+      'HTTP-Referer': 'https://crm.worknetic.de',
+      'X-Title': 'Worknetic CRM',
+    },
+  })
 }
 
 // ============================================
@@ -189,7 +196,7 @@ Tim`,
 // MAIN EXPORT
 // ============================================
 
-const MODEL = 'gpt-5-mini'
+const MODEL = 'perplexity/sonar'
 
 export async function generateOutreachEmail(
   input: EmailGenerationInput
@@ -198,7 +205,7 @@ export async function generateOutreachEmail(
     const userPrompt = buildUserPrompt(input)
     const hooks = extractPersonalizationHooks(input)
 
-    const completion = await getOpenAIClient().chat.completions.create({
+    const completion = await getOpenRouterClient().chat.completions.create({
       model: MODEL,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
@@ -210,7 +217,7 @@ export async function generateOutreachEmail(
 
     const raw = completion.choices[0]?.message?.content
     if (!raw) {
-      console.error('[email-generation] Empty response from OpenAI')
+      console.error('[email-generation] Empty response from OpenRouter')
       return buildFallbackEmail(input.lead.name)
     }
 

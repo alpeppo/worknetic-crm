@@ -346,7 +346,7 @@ async function callPerplexity(lead: {
   linkedin_url?: string | null
   headline?: string | null
 }): Promise<PerplexityData | null> {
-  const apiKey = process.env.PERPLEXITY_API_KEY
+  const apiKey = process.env.OPENROUTER_API_KEY
   if (!apiKey) {
     return null
   }
@@ -357,14 +357,16 @@ async function callPerplexity(lead: {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 30_000)
 
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://crm.worknetic.de',
+        'X-Title': 'Worknetic CRM',
       },
       body: JSON.stringify({
-        model: 'sonar',
+        model: 'perplexity/sonar',
         messages: [
           {
             role: 'system',
@@ -382,7 +384,7 @@ async function callPerplexity(lead: {
 
     if (!response.ok) {
       console.error(
-        `Perplexity API error: ${response.status} ${response.statusText}`,
+        `OpenRouter API error: ${response.status} ${response.statusText}`,
       )
       return null
     }
@@ -395,7 +397,7 @@ async function callPerplexity(lead: {
 
     return parsePerplexityResponse(content)
   } catch (err) {
-    console.error('Perplexity API call failed:', err)
+    console.error('OpenRouter API call failed:', err)
     return null
   }
 }
