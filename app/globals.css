@@ -1309,6 +1309,43 @@ select.form-input {
 
 .kanban-card.dragging {
   cursor: grabbing;
+  opacity: 0.4;
+}
+
+/* CRITICAL: During drag, make ALL children of columns transparent to pointer events.
+   This ensures dragover/drop events fire DIRECTLY on the column, not on cards/links/buttons.
+   This is the nuclear option that guarantees drop works. */
+.kanban-board.is-dragging .kanban-column-header,
+.kanban-board.is-dragging .kanban-cards,
+.kanban-board.is-dragging .kanban-card,
+.kanban-board.is-dragging .kanban-empty-placeholder {
+  pointer-events: none;
+}
+
+/* Visual feedback for drag-over columns */
+.kanban-column.drag-over {
+  background: rgba(0, 122, 255, 0.08);
+  border-color: #007AFF;
+  box-shadow: inset 0 0 0 2px rgba(0, 122, 255, 0.2);
+  transition: all 0.2s ease;
+}
+
+.kanban-column.drag-over .kanban-cards {
+  background: rgba(0, 122, 255, 0.04);
+}
+
+.kanban-empty-placeholder {
+  text-align: center;
+  padding: 32px 12px;
+  color: var(--color-text-tertiary);
+  font-size: 14px;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
 }
 
 .kanban-card-title {

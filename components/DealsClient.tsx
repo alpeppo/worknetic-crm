@@ -1,11 +1,9 @@
 'use client'
 
-// Force rebuild: 2026-02-04T18:57
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Modal } from './Modal'
 import { createDeal, updateDealStage, updateDeal } from '@/lib/actions'
-import Link from 'next/link'
 import { Plus, Loader2, GripVertical, Edit2 } from 'lucide-react'
 
 interface Deal {
@@ -141,61 +139,49 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
     }
   }
 
-  // Drag & Drop
-  const dragCounterRef = useRef<Record<string, number>>({})
+  // Drag & Drop — bulletproof implementation using pointer-events: none
+  // During drag, all children of columns become transparent to pointer events,
+  // so ALL drag events fire directly on the column. No bubbling issues possible.
+  const draggedDealRef = useRef<string | null>(null)
 
-  const onDragStart = (e: React.DragEvent<HTMLDivElement>, dealId: string) => {
+  const onDragStart = useCallback((e: React.DragEvent<HTMLDivElement>, dealId: string) => {
+    draggedDealRef.current = dealId
     setDraggedDealId(dealId)
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', dealId)
-    // Slight delay for visual feedback so browser captures drag image first
-    requestAnimationFrame(() => {
-      if (e.currentTarget) {
-        e.currentTarget.style.opacity = '0.5'
-      }
-    })
-  }
+  }, [])
 
-  const onDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
-    if (e.currentTarget) {
-      e.currentTarget.style.opacity = '1'
-    }
+  const onDragEnd = useCallback(() => {
+    draggedDealRef.current = null
     setDraggedDealId(null)
     setDragOverStage(null)
-    dragCounterRef.current = {}
-  }
+  }, [])
 
-  const onDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  const onColumnDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
-    e.stopPropagation()
     e.dataTransfer.dropEffect = 'move'
-  }
+  }, [])
 
-  const onDragEnter = (e: React.DragEvent<HTMLDivElement>, stageId: string) => {
+  const onColumnDragEnter = useCallback((e: React.DragEvent<HTMLDivElement>, stageId: string) => {
     e.preventDefault()
-    e.stopPropagation()
-    dragCounterRef.current[stageId] = (dragCounterRef.current[stageId] || 0) + 1
     setDragOverStage(stageId)
-  }
+  }, [])
 
-  const onDragLeave = (e: React.DragEvent<HTMLDivElement>, stageId: string) => {
-    e.stopPropagation()
-    dragCounterRef.current[stageId] = (dragCounterRef.current[stageId] || 0) - 1
-    if (dragCounterRef.current[stageId] <= 0) {
-      dragCounterRef.current[stageId] = 0
-      if (dragOverStage === stageId) {
-        setDragOverStage(null)
-      }
+  const onColumnDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>, stageId: string) => {
+    // Only clear if we're actually leaving the column (not entering a child)
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX
+    const y = e.clientY
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setDragOverStage((prev) => prev === stageId ? null : prev)
     }
-  }
+  }, [])
 
-  const onDrop = async (e: React.DragEvent<HTMLDivElement>, newStage: string) => {
+  const onColumnDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>, newStage: string) => {
     e.preventDefault()
-    e.stopPropagation()
     setDragOverStage(null)
-    dragCounterRef.current = {}
 
-    const dealId = e.dataTransfer.getData('text/plain') || draggedDealId
+    const dealId = e.dataTransfer.getData('text/plain') || draggedDealRef.current
     if (!dealId) return
 
     const deal = deals.find(d => d.id === dealId)
@@ -204,8 +190,9 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
       router.refresh()
     }
 
+    draggedDealRef.current = null
     setDraggedDealId(null)
-  }
+  }, [deals, router])
 
   // Modal form content
   const modalContent = (
@@ -334,7 +321,7 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
   return (
     <>
       {/* Kanban Board */}
-      <div className="kanban-board">
+      <div className={`kanban-board ${draggedDealId ? 'is-dragging' : ''}`}>
         {STAGES.map((stage) => {
           const stageDeals = dealsByStage[stage.id] || []
           const stageValue = stageValues[stage.id] || 0
@@ -343,16 +330,11 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
           return (
             <div
               key={stage.id}
-              className="kanban-column"
-              onDragOver={onDragOver}
-              onDragEnter={(e) => onDragEnter(e, stage.id)}
-              onDragLeave={(e) => onDragLeave(e, stage.id)}
-              onDrop={(e) => onDrop(e, stage.id)}
-              style={{
-                background: isDragOver ? 'rgba(0, 122, 255, 0.08)' : undefined,
-                borderColor: isDragOver ? '#007AFF' : undefined,
-                transition: 'all 0.2s ease'
-              }}
+              className={`kanban-column ${isDragOver ? 'drag-over' : ''}`}
+              onDragOver={onColumnDragOver}
+              onDragEnter={(e) => onColumnDragEnter(e, stage.id)}
+              onDragLeave={(e) => onColumnDragLeave(e, stage.id)}
+              onDrop={(e) => onColumnDrop(e, stage.id)}
             >
               <div className="kanban-column-header">
                 <div className="kanban-column-title">
@@ -370,10 +352,7 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
 
               <div
                 className="kanban-cards"
-                style={{
-                  background: isDragOver ? 'rgba(0, 122, 255, 0.05)' : undefined,
-                  minHeight: '100px'
-                }}
+                style={{ minHeight: '100px' }}
               >
                 {stageDeals.length > 0 ? (
                   stageDeals.map((deal) => {
@@ -387,13 +366,6 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
                         draggable
                         onDragStart={(e) => onDragStart(e, deal.id)}
                         onDragEnd={onDragEnd}
-                        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                        style={{
-                          opacity: isDragging ? 0.5 : 1,
-                          transform: isDragging ? 'rotate(2deg) scale(1.02)' : undefined,
-                          boxShadow: isDragging ? '0 8px 24px rgba(0,0,0,0.15)' : undefined,
-                          transition: 'transform 0.1s, box-shadow 0.1s'
-                        }}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -402,33 +374,26 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
                               className="text-muted flex-shrink-0 cursor-grab"
                               style={{ opacity: 0.4 }}
                             />
-                            <Link
-                              href={`/deals/${deal.id}`}
-                              className="kanban-card-title truncate hover:text-[var(--brand-primary)] transition-colors"
-                              onClick={(e) => e.stopPropagation()}
-                              onMouseDown={(e) => e.stopPropagation()}
-                              draggable={false}
+                            <div
+                              className="kanban-card-title truncate hover:text-[var(--color-blue)] transition-colors cursor-pointer"
+                              onClick={() => router.push(`/deals/${deal.id}`)}
                             >
                               {deal.name}
-                            </Link>
+                            </div>
                           </div>
                           <button
-                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); openEditModal(deal); }}
-                            onMouseDown={(e) => e.stopPropagation()}
+                            onClick={(e) => { e.stopPropagation(); openEditModal(deal); }}
                             className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-[var(--color-bg-secondary)] text-muted hover:text-[var(--color-text)] transition-all"
                           >
                             <Edit2 size={14} />
                           </button>
                         </div>
-                        <Link
-                          href={`/deals/${deal.id}`}
-                          className="kanban-card-company hover:text-[var(--brand-primary)] transition-colors"
-                          onClick={(e) => e.stopPropagation()}
-                          onMouseDown={(e) => e.stopPropagation()}
-                          draggable={false}
+                        <div
+                          className="kanban-card-company hover:text-[var(--color-blue)] transition-colors cursor-pointer"
+                          onClick={() => router.push(`/deals/${deal.id}`)}
                         >
                           {lead?.company || lead?.name || 'Kein Lead'}
-                        </Link>
+                        </div>
                         <div className="kanban-card-footer">
                           <div className="kanban-card-value">
                             €{(deal.value || 0).toLocaleString()}
@@ -450,25 +415,26 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
                   })
                 ) : (
                   <div
-                    className="text-center py-8 text-muted text-sm border-2 border-dashed rounded-lg"
+                    className="kanban-empty-placeholder"
                     style={{
                       borderColor: isDragOver ? '#007AFF' : 'var(--color-border)',
                       background: isDragOver ? 'rgba(0, 122, 255, 0.08)' : undefined,
-                      minHeight: '100px'
                     }}
                   >
-                    {isDragOver ? '✓ Hier ablegen' : 'Keine Deals'}
+                    {isDragOver ? 'Hier ablegen' : 'Keine Deals'}
                   </div>
                 )}
 
                 {/* Add Deal Button */}
-                <button
-                  className="w-full py-3 border-2 border-dashed border-[var(--color-border)] rounded-lg text-muted text-sm hover:border-[#007AFF] hover:text-[#007AFF] transition-colors"
-                  onClick={() => { resetForm(); setIsModalOpen(true); }}
-                >
-                  <Plus size={16} className="inline mr-1" />
-                  Deal hinzufügen
-                </button>
+                {!draggedDealId && (
+                  <button
+                    className="w-full py-3 border-2 border-dashed border-[var(--color-border)] rounded-lg text-muted text-sm hover:border-[#007AFF] hover:text-[#007AFF] transition-colors"
+                    onClick={() => { resetForm(); setIsModalOpen(true); }}
+                  >
+                    <Plus size={16} className="inline mr-1" />
+                    Deal hinzufügen
+                  </button>
+                )}
               </div>
             </div>
           )
