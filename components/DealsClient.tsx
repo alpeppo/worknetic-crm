@@ -137,11 +137,9 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
     }
   }
 
-  // Drag & Drop — 100% native DOM event listeners, completely bypasses React's event system.
-  // This is the most reliable approach because preventDefault() is called directly on
-  // the native event, with zero React overhead or timing issues.
+  // Drag & Drop — Mouse-events based. No HTML5 DnD API at all.
+  // Uses mousedown/mousemove/mouseup + elementFromPoint for 100% reliable drops.
   const boardRef = useRef<HTMLDivElement>(null)
-  const draggedDealIdRef = useRef<string | null>(null)
 
   const performDrop = useCallback(async (dealId: string, newStage: string) => {
     const deal = deals.find(d => d.id === dealId)
@@ -155,73 +153,135 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
     const board = boardRef.current
     if (!board) return
 
-    // NATIVE dragstart: store the deal ID, set transfer data
-    const onDragStart = (e: DragEvent) => {
-      const card = (e.target as HTMLElement).closest('[data-deal-id]') as HTMLElement | null
+    let drag: {
+      dealId: string
+      sourceStage: string
+      card: HTMLElement
+      clone: HTMLElement | null
+      offsetX: number
+      offsetY: number
+      startX: number
+      startY: number
+      started: boolean
+    } | null = null
+
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return // left click only
+      const target = e.target as HTMLElement
+      // Don't start drag from buttons or other interactive elements
+      if (target.closest('button')) return
+
+      const card = target.closest('[data-deal-id]') as HTMLElement | null
       if (!card) return
       const dealId = card.getAttribute('data-deal-id')
       if (!dealId) return
-      draggedDealIdRef.current = dealId
-      e.dataTransfer!.effectAllowed = 'move'
-      e.dataTransfer!.setData('text/plain', dealId)
-      requestAnimationFrame(() => card.classList.add('dragging'))
-    }
+      const col = card.closest('[data-stage]')
+      const sourceStage = col?.getAttribute('data-stage') || ''
 
-    // NATIVE dragend: clean up all visuals
-    const onDragEnd = () => {
-      draggedDealIdRef.current = null
-      board.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'))
-      board.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'))
-    }
-
-    // NATIVE dragover: MUST call preventDefault to allow drop — this is the critical part
-    const onDragOver = (e: DragEvent) => {
-      e.preventDefault()
-      if (e.dataTransfer) e.dataTransfer.dropEffect = 'move'
-    }
-
-    // NATIVE dragenter: highlight the column
-    const onDragEnter = (e: DragEvent) => {
-      e.preventDefault()
-      const col = (e.target as HTMLElement).closest('[data-stage]')
-      if (col) {
-        board.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'))
-        col.classList.add('drag-over')
+      const rect = card.getBoundingClientRect()
+      drag = {
+        dealId,
+        sourceStage,
+        card,
+        clone: null,
+        offsetX: e.clientX - rect.left,
+        offsetY: e.clientY - rect.top,
+        startX: e.clientX,
+        startY: e.clientY,
+        started: false,
       }
     }
 
-    // NATIVE drop: find the target column and perform the stage update
-    const onDrop = (e: DragEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      // Clean up visuals
-      board.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'))
-      board.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'))
+    const onMouseMove = (e: MouseEvent) => {
+      if (!drag) return
 
-      const col = (e.target as HTMLElement).closest('[data-stage]')
-      if (!col) return
-      const newStage = col.getAttribute('data-stage')
-      if (!newStage) return
+      // Start drag after 5px movement threshold (to allow clicks)
+      if (!drag.started) {
+        const dx = Math.abs(e.clientX - drag.startX)
+        const dy = Math.abs(e.clientY - drag.startY)
+        if (dx + dy < 5) return
+        drag.started = true
 
-      const dealId = e.dataTransfer?.getData('text/plain') || draggedDealIdRef.current
-      if (!dealId) return
+        // Create floating clone
+        const clone = drag.card.cloneNode(true) as HTMLElement
+        clone.style.cssText = `
+          position: fixed;
+          width: ${drag.card.offsetWidth}px;
+          z-index: 10000;
+          pointer-events: none;
+          opacity: 0.92;
+          transform: rotate(1.5deg) scale(1.03);
+          box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+          transition: none;
+          cursor: grabbing;
+        `
+        document.body.appendChild(clone)
+        drag.clone = clone
 
-      draggedDealIdRef.current = null
-      performDrop(dealId, newStage)
+        // Dim original card
+        drag.card.style.opacity = '0.3'
+        drag.card.style.transition = 'none'
+      }
+
+      // Move clone to cursor position
+      if (drag.clone) {
+        drag.clone.style.left = (e.clientX - drag.offsetX) + 'px'
+        drag.clone.style.top = (e.clientY - drag.offsetY) + 'px'
+      }
+
+      // Highlight column under cursor (hide clone temporarily for elementFromPoint)
+      if (drag.clone) {
+        drag.clone.style.display = 'none'
+        const el = document.elementFromPoint(e.clientX, e.clientY)
+        drag.clone.style.display = ''
+
+        board.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'))
+        const col = el?.closest('[data-stage]')
+        if (col) col.classList.add('drag-over')
+      }
     }
 
-    board.addEventListener('dragstart', onDragStart)
-    board.addEventListener('dragend', onDragEnd)
-    board.addEventListener('dragover', onDragOver)
-    board.addEventListener('dragenter', onDragEnter)
-    board.addEventListener('drop', onDrop)
+    const onMouseUp = (e: MouseEvent) => {
+      if (!drag) return
+
+      if (drag.started && drag.clone) {
+        // Find column under cursor
+        drag.clone.style.display = 'none'
+        const el = document.elementFromPoint(e.clientX, e.clientY)
+        drag.clone.style.display = ''
+
+        const col = el?.closest('[data-stage]')
+        const newStage = col?.getAttribute('data-stage')
+
+        // Clean up
+        drag.clone.remove()
+        drag.card.style.opacity = ''
+        drag.card.style.transition = ''
+        board.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'))
+
+        // Perform the stage update if dropped on a different column
+        if (newStage && newStage !== drag.sourceStage) {
+          performDrop(drag.dealId, newStage)
+        }
+      }
+
+      drag = null
+    }
+
+    board.addEventListener('mousedown', onMouseDown)
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
 
     return () => {
-      board.removeEventListener('dragstart', onDragStart)
-      board.removeEventListener('dragend', onDragEnd)
-      board.removeEventListener('dragover', onDragOver)
-      board.removeEventListener('dragenter', onDragEnter)
-      board.removeEventListener('drop', onDrop)
+      board.removeEventListener('mousedown', onMouseDown)
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
+      // Clean up if component unmounts during drag
+      if (drag?.clone) {
+        drag.clone.remove()
+        drag.card.style.opacity = ''
+        drag.card.style.transition = ''
+      }
     }
   }, [performDrop])
 
@@ -386,7 +446,6 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
                       <div
                         key={deal.id}
                         className="kanban-card group"
-                        draggable={true}
                         data-deal-id={deal.id}
                       >
                         <div className="flex items-start justify-between gap-2">
