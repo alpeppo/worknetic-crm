@@ -5,6 +5,8 @@ import { Header } from '@/components/Header'
 import { LeadDetailClient } from '@/components/LeadDetailClient'
 import { LeadScoreInsights } from '@/components/LeadScoreInsights'
 import { DocumentManager } from '@/components/DocumentManager'
+import { EnrichmentCard } from '@/components/EnrichmentCard'
+import { EmailDraftCard } from '@/components/EmailDraftCard'
 import { getLeadDocuments } from '@/lib/documents'
 import {
   ArrowLeft,
@@ -47,6 +49,14 @@ export default async function LeadDetailPage({
     .limit(50)
 
   const documents = await getLeadDocuments(id)
+
+  // Extract enrichment and email draft activities (latest of each)
+  const enrichmentActivity = activities?.find((a) => a.type === 'enrichment') || null
+  const emailDraftActivity = activities?.find((a) => a.type === 'email_draft') || null
+  // Filter out enrichment/email_draft from the regular timeline
+  const timelineActivities = activities?.filter(
+    (a) => a.type !== 'enrichment' && a.type !== 'email_draft'
+  ) || []
 
   const activityCount = activities?.length || 0
   const lastActivityDate = activities && activities.length > 0 ? activities[0].created_at : null
@@ -259,15 +269,21 @@ export default async function LeadDetailPage({
               </div>
             </div>
 
+            {/* Personalized Email Draft */}
+            <EmailDraftCard
+              emailActivity={emailDraftActivity}
+              lead={{ id, name: lead.name, email: lead.email }}
+            />
+
             {/* Activities */}
             <div className="card">
               <div className="card-header">
                 <h3 className="card-title">Aktivitäten</h3>
               </div>
               <div className="card-body">
-                {activities && activities.length > 0 ? (
+                {timelineActivities.length > 0 ? (
                   <div className="space-y-4">
-                    {activities.map((activity) => (
+                    {timelineActivities.map((activity) => (
                       <div
                         key={activity.id}
                         className="flex gap-4 pb-4 border-b border-[var(--border-light)] last:border-0 last:pb-0"
@@ -409,6 +425,12 @@ export default async function LeadDetailPage({
                 )}
               </div>
             </div>
+
+            {/* Enrichment / Recherche */}
+            <EnrichmentCard
+              enrichmentActivity={enrichmentActivity}
+              leadId={id}
+            />
 
             {/* Lead Score Insights */}
             <LeadScoreInsights

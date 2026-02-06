@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache'
 import { supabase } from './supabase'
+import { enrichLead } from './enrichment'
+import { generateOutreachEmail } from './email-generation'
 
 // ============================================
 // LEAD ACTIONS
@@ -56,7 +58,98 @@ export async function createLead(data: LeadFormData) {
   revalidatePath('/leads')
   revalidatePath('/')
 
+  // Fire-and-forget: enrich lead asynchronously
+  if (lead) {
+    runEnrichmentPipeline(lead.id, {
+      name: data.name,
+      company: data.company,
+      website: data.website,
+      email: data.email,
+      phone: data.phone,
+      linkedin_url: data.linkedin_url,
+      headline: data.headline,
+      vertical: data.vertical,
+      location: data.location,
+    }).catch((err) => console.error('Enrichment pipeline error:', err))
+  }
+
   return { success: true, lead }
+}
+
+async function runEnrichmentPipeline(
+  leadId: string,
+  lead: {
+    name: string
+    company?: string
+    website?: string
+    email?: string
+    phone?: string
+    linkedin_url?: string
+    headline?: string
+    vertical?: string
+    location?: string
+  }
+) {
+  // Step 1: Enrich lead data
+  const enrichmentResult = await enrichLead({
+    name: lead.name,
+    company: lead.company,
+    website: lead.website,
+    email: lead.email,
+    phone: lead.phone,
+    linkedin_url: lead.linkedin_url,
+    headline: lead.headline,
+  })
+
+  // Step 2: Update lead fields (only if currently empty)
+  const leadUpdates: Record<string, unknown> = { updated_at: new Date().toISOString() }
+  if (enrichmentResult.email && !lead.email) leadUpdates.email = enrichmentResult.email
+  if (enrichmentResult.phone && !lead.phone) leadUpdates.phone = enrichmentResult.phone
+  if (enrichmentResult.website && !lead.website) leadUpdates.website = enrichmentResult.website
+
+  if (Object.keys(leadUpdates).length > 1) {
+    await supabase.from('leads').update(leadUpdates).eq('id', leadId)
+  }
+
+  // Step 3: Store enrichment activity
+  await supabase.from('activities').insert({
+    lead_id: leadId,
+    type: 'enrichment',
+    subject: `Lead angereichert (${enrichmentResult.status})`,
+    body: enrichmentResult.company_description || null,
+    metadata: { enrichment: enrichmentResult },
+    created_by: 'system',
+    created_at: new Date().toISOString(),
+  })
+
+  // Step 4: Generate personalized email
+  const email = await generateOutreachEmail({
+    lead: {
+      name: lead.name,
+      company: lead.company,
+      headline: lead.headline,
+      vertical: lead.vertical,
+      website: lead.website || enrichmentResult.website,
+      location: lead.location,
+    },
+    enrichment: {
+      company_description: enrichmentResult.company_description,
+      business_processes: enrichmentResult.business_processes,
+    },
+  })
+
+  // Step 5: Store email draft activity
+  await supabase.from('activities').insert({
+    lead_id: leadId,
+    type: 'email_draft',
+    subject: email.subject,
+    body: email.body,
+    metadata: { email_draft: email },
+    created_by: 'system',
+    created_at: new Date().toISOString(),
+  })
+
+  revalidatePath(`/leads/${leadId}`)
 }
 
 export async function updateLead(id: string, data: Partial<LeadFormData>) {
