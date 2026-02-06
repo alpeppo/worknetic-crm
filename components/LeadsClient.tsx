@@ -234,6 +234,57 @@ export function LeadsClient({
   const hotLeadsCount = leads.filter(l => l.outreach_priority === 'hot').length
   const withPhoneCount = leads.filter(l => (l.contact_score || 0) >= 3).length
 
+  const handleCSVExport = () => {
+    const csvColumns = ['Name', 'Email', 'Phone', 'Company', 'Headline', 'Vertical', 'Source', 'Stage', 'Lead Score', 'Created At']
+
+    const escapeCSVValue = (value: string | number | undefined | null): string => {
+      if (value === undefined || value === null) return ''
+      const str = String(value)
+      // Wrap in quotes if the value contains semicolons, quotes, or newlines
+      if (str.includes(';') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+        return '"' + str.replace(/"/g, '""') + '"'
+      }
+      return str
+    }
+
+    const getStageLabel = (stage: string | undefined): string => {
+      if (!stage) return ''
+      const found = STAGES.find(s => s.value === stage)
+      return found ? found.label : stage
+    }
+
+    const rows = filteredLeads.map(lead => [
+      escapeCSVValue(lead.name),
+      escapeCSVValue(lead.email),
+      escapeCSVValue(lead.phone),
+      escapeCSVValue(lead.company),
+      escapeCSVValue(lead.headline),
+      escapeCSVValue(lead.vertical),
+      escapeCSVValue(lead.source),
+      escapeCSVValue(getStageLabel(lead.stage)),
+      escapeCSVValue(lead.lead_score),
+      escapeCSVValue(lead.created_at ? new Date(lead.created_at).toLocaleDateString('de-DE') : '')
+    ].join(';'))
+
+    const csvContent = [csvColumns.join(';'), ...rows].join('\n')
+
+    // Add BOM for proper UTF-8 handling in Excel
+    const BOM = '\uFEFF'
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' })
+
+    const today = new Date().toISOString().split('T')[0]
+    const filename = `leads-export-${today}.csv`
+
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <>
       {/* Stats - Verticals Style */}
@@ -428,6 +479,7 @@ export function LeadsClient({
             CSV Import
           </button>
           <button
+            onClick={handleCSVExport}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -445,7 +497,7 @@ export function LeadsClient({
             className="hover:bg-[var(--color-bg-secondary)] hover:border-[var(--color-border-strong)]"
           >
             <Download size={16} />
-            Export
+            CSV Export
           </button>
           <button
             onClick={() => setIsCreateModalOpen(true)}

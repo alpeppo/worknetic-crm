@@ -308,6 +308,7 @@ export async function updateDeal(id: string, data: Partial<DealFormData>) {
   }
 
   revalidatePath('/deals')
+  revalidatePath(`/deals/${id}`)
   revalidatePath('/')
 
   return { success: true }
@@ -338,6 +339,7 @@ export async function updateDealStage(id: string, stage: string) {
   }
 
   revalidatePath('/deals')
+  revalidatePath(`/deals/${id}`)
   revalidatePath('/')
 
   return { success: true }

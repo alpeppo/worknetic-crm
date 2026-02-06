@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { clsx } from 'clsx'
@@ -8,6 +8,7 @@ import { Modal } from './Modal'
 import { LeadForm } from './LeadForm'
 import { createSupabaseBrowser } from '@/lib/supabase-browser'
 import { useTheme } from './ThemeProvider'
+import { useSidebar } from './SidebarProvider'
 import {
   LayoutDashboard,
   Users,
@@ -58,8 +59,14 @@ export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
+  const { isOpen, close } = useSidebar()
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false)
+
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    close()
+  }, [pathname, close])
 
   const handleQuickAdd = (action: string) => {
     setIsQuickAddOpen(false)
@@ -78,7 +85,14 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="sidebar">
+      {/* Mobile backdrop overlay */}
+      {isOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={close}
+        />
+      )}
+      <aside className={clsx('sidebar', { open: isOpen })}>
         {/* Logo */}
         <div className="sidebar-header">
           <Link href="/" className="logo">

@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Modal } from './Modal'
 import { createDeal, updateDealStage, updateDeal } from '@/lib/actions'
+import Link from 'next/link'
 import { Plus, Loader2, GripVertical, Edit2 } from 'lucide-react'
 
 interface Deal {
@@ -385,7 +386,15 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
                               className="text-muted flex-shrink-0 cursor-grab"
                               style={{ opacity: 0.4 }}
                             />
-                            <div className="kanban-card-title truncate">{deal.name}</div>
+                            <Link
+                              href={`/deals/${deal.id}`}
+                              className="kanban-card-title truncate hover:text-[var(--brand-primary)] transition-colors"
+                              onClick={(e) => e.stopPropagation()}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              draggable={false}
+                            >
+                              {deal.name}
+                            </Link>
                           </div>
                           <button
                             onClick={(e) => { e.stopPropagation(); e.preventDefault(); openEditModal(deal); }}
@@ -395,9 +404,15 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
                             <Edit2 size={14} />
                           </button>
                         </div>
-                        <div className="kanban-card-company">
+                        <Link
+                          href={`/deals/${deal.id}`}
+                          className="kanban-card-company hover:text-[var(--brand-primary)] transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          draggable={false}
+                        >
                           {lead?.company || lead?.name || 'Kein Lead'}
-                        </div>
+                        </Link>
                         <div className="kanban-card-footer">
                           <div className="kanban-card-value">
                             €{(deal.value || 0).toLocaleString()}

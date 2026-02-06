@@ -2,7 +2,9 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { SidebarProvider } from "@/components/SidebarProvider";
 import { CommandPalette } from "@/components/CommandPalette";
+import { ToastProvider } from "@/components/ToastProvider";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -39,13 +41,17 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <ThemeProvider>
-          <div className="app-layout">
-            <Sidebar />
-            <main className="main-content">
-              {children}
-            </main>
-          </div>
-          <CommandPalette />
+          <ToastProvider>
+            <SidebarProvider>
+              <div className="app-layout">
+                <Sidebar />
+                <main className="main-content">
+                  {children}
+                </main>
+              </div>
+              <CommandPalette />
+            </SidebarProvider>
+          </ToastProvider>
         </ThemeProvider>
       </body>
     </html>

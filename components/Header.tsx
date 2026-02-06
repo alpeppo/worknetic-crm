@@ -1,7 +1,8 @@
 'use client'
 
-import { Search, HelpCircle, Command } from 'lucide-react'
+import { Search, HelpCircle, Command, Menu } from 'lucide-react'
 import { NotificationDropdown } from './NotificationDropdown'
+import { useSidebar } from './SidebarProvider'
 
 interface HeaderProps {
   title: string
@@ -10,9 +11,19 @@ interface HeaderProps {
 }
 
 export function Header({ title, subtitle, actions }: HeaderProps) {
+  const { toggle } = useSidebar()
+
   return (
     <header className="app-header">
       <div className="header-left">
+        {/* Mobile hamburger */}
+        <button
+          onClick={toggle}
+          className="mobile-menu-btn"
+          aria-label="Menü öffnen"
+        >
+          <Menu size={22} />
+        </button>
         <div>
           <h1 className="header-title">{title}</h1>
           {subtitle && <p className="header-subtitle">{subtitle}</p>}
