@@ -118,13 +118,13 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
   const handleDelete = async (dealId: string) => {
     if (!confirm('Deal wirklich löschen?')) return
     setDeletingDealId(dealId)
+    const previousDeals = localDeals
     setLocalDeals(prev => prev.filter(d => d.id !== dealId))
     const result = await deleteDeal(dealId)
     if (!result.success) {
-      setLocalDeals(deals)
+      setLocalDeals(previousDeals)
     }
     setDeletingDealId(null)
-    router.refresh()
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
