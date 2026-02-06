@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { clsx } from 'clsx'
 import { Modal } from './Modal'
 import { LeadForm } from './LeadForm'
+import { createSupabaseBrowser } from '@/lib/supabase-browser'
 import {
   LayoutDashboard,
   Users,
@@ -21,7 +22,9 @@ import {
   ChevronRight,
   Sparkles,
   BarChart3,
-  Mail
+  Mail,
+  Calendar,
+  LogOut
 } from 'lucide-react'
 
 const mainNavigation = [
@@ -34,6 +37,7 @@ const mainNavigation = [
 const secondaryNavigation = [
   { name: 'Verticals', href: '/verticals', icon: Target },
   { name: 'Aktivitäten', href: '/activities', icon: Activity },
+  { name: 'Kalender', href: '/calendar', icon: Calendar },
   { name: 'Templates', href: '/settings/templates', icon: Mail },
 ]
 
@@ -161,8 +165,8 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* Footer - Settings Only */}
-        <div style={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        {/* Footer - Settings & Logout */}
+        <div style={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <Link
             href="/settings"
             className="flex items-center gap-3 px-4 py-3 rounded-xl text-[rgba(255,255,255,0.6)] hover:text-white hover:bg-[rgba(255,255,255,0.06)] transition-all"
@@ -170,6 +174,19 @@ export function Sidebar() {
             <Settings size={18} />
             <span className="text-sm font-medium">Einstellungen</span>
           </Link>
+          <button
+            onClick={async () => {
+              const supabase = createSupabaseBrowser()
+              await supabase.auth.signOut()
+              router.push('/login')
+              router.refresh()
+            }}
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-[rgba(255,255,255,0.4)] hover:text-[#FF3B30] hover:bg-[rgba(255,59,48,0.08)] transition-all w-full"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+          >
+            <LogOut size={18} />
+            <span className="text-sm font-medium">Abmelden</span>
+          </button>
         </div>
       </aside>
 

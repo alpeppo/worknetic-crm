@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Modal } from './Modal'
 import { LeadForm } from './LeadForm'
 import { ActivityForm } from './ActivityForm'
+import EmailComposer from './EmailComposer'
 import { updateLeadStage, deleteLead, setFollowUp, createDeal } from '@/lib/actions'
 import {
   Edit2,
@@ -16,6 +17,7 @@ import {
   CalendarCheck,
   Briefcase,
   Calendar,
+  Mail,
   RefreshCw,
   Loader2
 } from 'lucide-react'
@@ -63,6 +65,7 @@ export function LeadDetailClient({ lead }: LeadDetailClientProps) {
   const router = useRouter()
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false)
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false)
   const [isDealModalOpen, setIsDealModalOpen] = useState(false)
   const [isStageDropdownOpen, setIsStageDropdownOpen] = useState(false)
   const [isFollowUpOpen, setIsFollowUpOpen] = useState(false)
@@ -164,6 +167,13 @@ export function LeadDetailClient({ lead }: LeadDetailClientProps) {
         <div className="card-body space-y-3">
           <button
             className="btn btn-primary w-full"
+            onClick={() => setIsEmailModalOpen(true)}
+          >
+            <Mail size={18} />
+            E-Mail senden
+          </button>
+          <button
+            className="btn btn-secondary w-full"
             onClick={() => setIsActivityModalOpen(true)}
           >
             <MessageSquare size={18} />
@@ -248,6 +258,20 @@ export function LeadDetailClient({ lead }: LeadDetailClientProps) {
             </button>
           </div>
         </div>
+      </Modal>
+
+      {/* Email Composer Modal */}
+      <Modal
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+        title="E-Mail senden"
+        size="lg"
+      >
+        <EmailComposer
+          lead={lead}
+          onSuccess={() => setIsEmailModalOpen(false)}
+          onCancel={() => setIsEmailModalOpen(false)}
+        />
       </Modal>
 
       {/* Create Deal Modal */}
