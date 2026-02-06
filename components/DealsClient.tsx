@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Modal } from './Modal'
 import { createDeal, updateDealStage, updateDeal } from '@/lib/actions'
-import { Plus, Loader2, GripVertical, Edit2 } from 'lucide-react'
+import { Plus, Loader2, GripVertical, Edit2, TrendingUp, DollarSign, Briefcase, Target } from 'lucide-react'
 
 interface Deal {
   id: string
@@ -70,6 +70,12 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
     acc[stage.id] = stageDeals.reduce((sum, d) => sum + (d.value || 0), 0)
     return acc
   }, {} as Record<string, number>)
+
+  // Stats — computed from localDeals so they update optimistically on drag & drop
+  const totalDeals = localDeals.length
+  const pipelineValue = localDeals.reduce((sum, d) => sum + (d.value || 0), 0)
+  const wonValue = localDeals.filter(d => d.stage === 'won').reduce((sum, d) => sum + (d.value || 0), 0)
+  const avgDealSize = localDeals.length ? Math.round(pipelineValue / localDeals.length) : 0
 
   const resetForm = () => {
     setFormData({ lead_id: '', name: '', value: '', probability: '50', expected_close_date: '', notes: '' })
@@ -430,6 +436,82 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
 
   return (
     <>
+      {/* Stats - computed from localDeals for instant updates */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '32px' }}>
+        <div
+          style={{
+            background: 'var(--color-bg)',
+            borderRadius: '20px',
+            border: '1px solid var(--color-border)',
+            padding: '24px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pipeline</span>
+            <div style={{ width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 122, 255, 0.1)' }}>
+              <TrendingUp size={22} style={{ color: '#007AFF' }} />
+            </div>
+          </div>
+          <div style={{ fontSize: '32px', fontWeight: 700, color: '#007AFF', letterSpacing: '-0.5px' }}>€{(pipelineValue / 1000).toFixed(0)}k</div>
+          <p style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', marginTop: '8px' }}>Gesamtwert</p>
+        </div>
+        <div
+          style={{
+            background: 'var(--color-bg)',
+            borderRadius: '20px',
+            border: '1px solid var(--color-border)',
+            padding: '24px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Gewonnen</span>
+            <div style={{ width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(52, 199, 89, 0.1)' }}>
+              <DollarSign size={22} style={{ color: '#34C759' }} />
+            </div>
+          </div>
+          <div style={{ fontSize: '32px', fontWeight: 700, color: '#34C759', letterSpacing: '-0.5px' }}>€{(wonValue / 1000).toFixed(0)}k</div>
+          <p style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', marginTop: '8px' }}>Abgeschlossen</p>
+        </div>
+        <div
+          style={{
+            background: 'var(--color-bg)',
+            borderRadius: '20px',
+            border: '1px solid var(--color-border)',
+            padding: '24px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Deals</span>
+            <div style={{ width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(175, 82, 222, 0.1)' }}>
+              <Briefcase size={22} style={{ color: '#AF52DE' }} />
+            </div>
+          </div>
+          <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.5px' }}>{totalDeals}</div>
+          <p style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', marginTop: '8px' }}>In der Pipeline</p>
+        </div>
+        <div
+          style={{
+            background: 'var(--color-bg)',
+            borderRadius: '20px',
+            border: '1px solid var(--color-border)',
+            padding: '24px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Ø Deal</span>
+            <div style={{ width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255, 149, 0, 0.1)' }}>
+              <Target size={22} style={{ color: '#FF9500' }} />
+            </div>
+          </div>
+          <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.5px' }}>€{avgDealSize.toLocaleString()}</div>
+          <p style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', marginTop: '8px' }}>Durchschnitt</p>
+        </div>
+      </div>
+
       {/* Kanban Board — all drag events handled via native DOM listeners in useEffect */}
       <div className="kanban-board" ref={boardRef}>
         {STAGES.map((stage) => {
