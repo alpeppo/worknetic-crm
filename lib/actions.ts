@@ -314,6 +314,23 @@ export async function updateDeal(id: string, data: Partial<DealFormData>) {
   return { success: true }
 }
 
+export async function deleteDeal(id: string) {
+  const { error } = await supabase
+    .from('deals')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error deleting deal:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/deals')
+  revalidatePath('/')
+
+  return { success: true }
+}
+
 export async function updateDealStage(id: string, stage: string) {
   const updateData: Record<string, unknown> = {
     stage,

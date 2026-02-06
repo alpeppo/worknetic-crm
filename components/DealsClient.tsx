@@ -3,8 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Modal } from './Modal'
-import { createDeal, updateDealStage, updateDeal } from '@/lib/actions'
-import { Plus, Loader2, GripVertical, Edit2, TrendingUp, DollarSign, Briefcase, Target } from 'lucide-react'
+import { createDeal, updateDealStage, updateDeal, deleteDeal } from '@/lib/actions'
+import { Plus, Loader2, GripVertical, Edit2, Trash2, TrendingUp, DollarSign, Briefcase, Target } from 'lucide-react'
 
 interface Deal {
   id: string
@@ -43,6 +43,7 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [editingDeal, setEditingDeal] = useState<Deal | null>(null)
+  const [deletingDealId, setDeletingDealId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     lead_id: '',
     name: '',
@@ -94,6 +95,18 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
       notes: deal.notes || ''
     })
     setIsModalOpen(true)
+  }
+
+  const handleDelete = async (dealId: string) => {
+    if (!confirm('Deal wirklich löschen?')) return
+    setDeletingDealId(dealId)
+    setLocalDeals(prev => prev.filter(d => d.id !== dealId))
+    const result = await deleteDeal(dealId)
+    if (!result.success) {
+      setLocalDeals(deals)
+    }
+    setDeletingDealId(null)
+    router.refresh()
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -392,24 +405,37 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
           placeholder="Zusätzliche Informationen zum Deal..."
         />
       </div>
-      <div className="flex justify-end gap-3 pt-4 border-t border-[var(--border-light)]">
-        <button
-          type="button"
-          className="btn btn-secondary"
-          onClick={() => { setIsModalOpen(false); resetForm(); }}
-        >
-          Abbrechen
-        </button>
-        <button type="submit" disabled={isLoading} className="btn btn-primary">
-          {isLoading ? (
-            <>
-              <Loader2 size={16} className="animate-spin" />
-              {editingDeal ? 'Speichern...' : 'Erstellen...'}
-            </>
-          ) : (
-            editingDeal ? 'Speichern' : 'Deal erstellen'
-          )}
-        </button>
+      <div className="flex items-center justify-between pt-4 border-t border-[var(--border-light)]">
+        {editingDeal ? (
+          <button
+            type="button"
+            onClick={() => { setIsModalOpen(false); resetForm(); handleDelete(editingDeal.id); }}
+            className="btn flex items-center gap-2 text-[#FF3B30] hover:bg-[rgba(255,59,48,0.1)]"
+            style={{ background: 'none', border: '1px solid rgba(255,59,48,0.3)' }}
+          >
+            <Trash2 size={16} />
+            Löschen
+          </button>
+        ) : <div />}
+        <div className="flex gap-3">
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => { setIsModalOpen(false); resetForm(); }}
+          >
+            Abbrechen
+          </button>
+          <button type="submit" disabled={isLoading} className="btn btn-primary">
+            {isLoading ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                {editingDeal ? 'Speichern...' : 'Erstellen...'}
+              </>
+            ) : (
+              editingDeal ? 'Speichern' : 'Deal erstellen'
+            )}
+          </button>
+        </div>
       </div>
     </form>
   )
@@ -563,12 +589,21 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
                               {deal.name}
                             </div>
                           </div>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); openEditModal(deal); }}
-                            className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-[var(--color-bg-secondary)] text-muted hover:text-[var(--color-text)] transition-all"
-                          >
-                            <Edit2 size={14} />
-                          </button>
+                          <div className="flex items-center gap-0.5">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); openEditModal(deal); }}
+                              className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-[var(--color-bg-secondary)] text-muted hover:text-[var(--color-text)] transition-all"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleDelete(deal.id); }}
+                              disabled={deletingDealId === deal.id}
+                              className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-[rgba(255,59,48,0.1)] text-muted hover:text-[#FF3B30] transition-all"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         </div>
                         <div
                           className="kanban-card-company hover:text-[var(--color-blue)] transition-colors cursor-pointer"
