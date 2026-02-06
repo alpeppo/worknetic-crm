@@ -1,7 +1,7 @@
 'use client'
 
 // Force rebuild: 2026-02-04T18:57
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Modal } from './Modal'
 import { createDeal, updateDealStage, updateDeal } from '@/lib/actions'
@@ -141,15 +141,19 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
     }
   }
 
-  // Simplified Drag & Drop
+  // Drag & Drop
+  const dragCounterRef = useRef<Record<string, number>>({})
+
   const onDragStart = (e: React.DragEvent<HTMLDivElement>, dealId: string) => {
     setDraggedDealId(dealId)
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', dealId)
-    // Add visual feedback
-    if (e.currentTarget) {
-      e.currentTarget.style.opacity = '0.5'
-    }
+    // Slight delay for visual feedback so browser captures drag image first
+    requestAnimationFrame(() => {
+      if (e.currentTarget) {
+        e.currentTarget.style.opacity = '0.5'
+      }
+    })
   }
 
   const onDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
@@ -158,28 +162,38 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
     }
     setDraggedDealId(null)
     setDragOverStage(null)
+    dragCounterRef.current = {}
   }
 
-  const onDragOver = (e: React.DragEvent<HTMLDivElement>, stageId: string) => {
+  const onDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
+    e.stopPropagation()
     e.dataTransfer.dropEffect = 'move'
+  }
+
+  const onDragEnter = (e: React.DragEvent<HTMLDivElement>, stageId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    dragCounterRef.current[stageId] = (dragCounterRef.current[stageId] || 0) + 1
     setDragOverStage(stageId)
   }
 
-  const onDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    // Check if we're leaving to a child element
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = e.clientX
-    const y = e.clientY
-
-    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
-      setDragOverStage(null)
+  const onDragLeave = (e: React.DragEvent<HTMLDivElement>, stageId: string) => {
+    e.stopPropagation()
+    dragCounterRef.current[stageId] = (dragCounterRef.current[stageId] || 0) - 1
+    if (dragCounterRef.current[stageId] <= 0) {
+      dragCounterRef.current[stageId] = 0
+      if (dragOverStage === stageId) {
+        setDragOverStage(null)
+      }
     }
   }
 
   const onDrop = async (e: React.DragEvent<HTMLDivElement>, newStage: string) => {
     e.preventDefault()
+    e.stopPropagation()
     setDragOverStage(null)
+    dragCounterRef.current = {}
 
     const dealId = e.dataTransfer.getData('text/plain') || draggedDealId
     if (!dealId) return
@@ -330,8 +344,9 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
             <div
               key={stage.id}
               className="kanban-column"
-              onDragOver={(e) => onDragOver(e, stage.id)}
-              onDragLeave={onDragLeave}
+              onDragOver={onDragOver}
+              onDragEnter={(e) => onDragEnter(e, stage.id)}
+              onDragLeave={(e) => onDragLeave(e, stage.id)}
               onDrop={(e) => onDrop(e, stage.id)}
               style={{
                 background: isDragOver ? 'rgba(0, 122, 255, 0.08)' : undefined,
@@ -372,6 +387,7 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
                         draggable
                         onDragStart={(e) => onDragStart(e, deal.id)}
                         onDragEnd={onDragEnd}
+                        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                         style={{
                           opacity: isDragging ? 0.5 : 1,
                           transform: isDragging ? 'rotate(2deg) scale(1.02)' : undefined,
