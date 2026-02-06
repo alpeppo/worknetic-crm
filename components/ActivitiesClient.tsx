@@ -15,7 +15,10 @@ import {
   RefreshCw,
   TrendingUp,
   Clock,
-  Loader2
+  Loader2,
+  Video,
+  Smartphone,
+  MessageCircle
 } from 'lucide-react'
 
 interface Activity {
@@ -48,6 +51,9 @@ const ACTIVITY_TYPES = [
   { value: 'email_received', label: 'E-Mail erhalten', icon: Mail },
   { value: 'meeting', label: 'Meeting', icon: CalendarCheck },
   { value: 'linkedin_message', label: 'LinkedIn Nachricht', icon: Linkedin },
+  { value: 'video_call', label: 'Video Call', icon: Video },
+  { value: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
+  { value: 'sms', label: 'SMS', icon: Smartphone },
 ]
 
 export function ActivitiesClient({
@@ -92,6 +98,9 @@ export function ActivitiesClient({
       case 'meeting': return <CalendarCheck size={18} />
       case 'note': return <MessageSquare size={18} />
       case 'linkedin_message': return <Linkedin size={18} />
+      case 'video_call': return <Video size={18} />
+      case 'whatsapp': return <MessageCircle size={18} />
+      case 'sms': return <Smartphone size={18} />
       case 'stage_change': return <RefreshCw size={18} />
       case 'score_update': return <TrendingUp size={18} />
       default: return <Clock size={18} />
@@ -106,6 +115,9 @@ export function ActivitiesClient({
       case 'meeting': return '#8b5cf6'
       case 'note': return '#6b7280'
       case 'linkedin_message': return '#0077b5'
+      case 'video_call': return '#FF9500'
+      case 'whatsapp': return '#25D366'
+      case 'sms': return '#5AC8FA'
       case 'stage_change': return '#f59e0b'
       case 'score_update': return '#ef4444'
       default: return '#6b7280'
@@ -151,7 +163,7 @@ export function ActivitiesClient({
       {/* Header Actions */}
       <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
         <Plus size={18} />
-        Activity hinzufügen
+        Aktivität hinzufügen
       </button>
 
       {/* Type Stats */}
@@ -217,6 +229,27 @@ export function ActivitiesClient({
         >
           <MessageSquare size={14} />
           Notizen
+        </button>
+        <button
+          className={`filter-btn ${filter === 'video_call' ? 'active' : ''}`}
+          onClick={() => setFilter(filter === 'video_call' ? null : 'video_call')}
+        >
+          <Video size={14} />
+          Video
+        </button>
+        <button
+          className={`filter-btn ${filter === 'whatsapp' ? 'active' : ''}`}
+          onClick={() => setFilter(filter === 'whatsapp' ? null : 'whatsapp')}
+        >
+          <MessageCircle size={14} />
+          WhatsApp
+        </button>
+        <button
+          className={`filter-btn ${filter === 'sms' ? 'active' : ''}`}
+          onClick={() => setFilter(filter === 'sms' ? null : 'sms')}
+        >
+          <Smartphone size={14} />
+          SMS
         </button>
       </div>
 
@@ -317,7 +350,7 @@ export function ActivitiesClient({
             </div>
             <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
               <Plus size={18} />
-              Activity erstellen
+              Aktivität erstellen
             </button>
           </div>
         </div>
@@ -327,7 +360,7 @@ export function ActivitiesClient({
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title="Activity hinzufügen"
+        title="Aktivität hinzufügen"
         size="md"
       >
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -431,7 +464,7 @@ export function ActivitiesClient({
                   Speichern...
                 </>
               ) : (
-                'Activity hinzufügen'
+                'Aktivität hinzufügen'
               )}
             </button>
           </div>

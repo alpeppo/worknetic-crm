@@ -19,18 +19,22 @@ import {
   DollarSign,
   MessageSquare,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  BarChart3,
+  Mail
 } from 'lucide-react'
 
 const mainNavigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Leads', href: '/leads', icon: Users },
   { name: 'Deals', href: '/deals', icon: Briefcase },
+  { name: 'Reports', href: '/reports', icon: BarChart3 },
 ]
 
 const secondaryNavigation = [
   { name: 'Verticals', href: '/verticals', icon: Target },
-  { name: 'Activities', href: '/activities', icon: Activity },
+  { name: 'Aktivitäten', href: '/activities', icon: Activity },
+  { name: 'Templates', href: '/settings/templates', icon: Mail },
 ]
 
 const quickAddOptions = [

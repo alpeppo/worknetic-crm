@@ -87,3 +87,41 @@ export type Vertical = {
   created_at: string
   updated_at: string
 }
+
+export type EmailTemplate = {
+  id: string
+  name: string
+  subject: string
+  body: string
+  vertical: string | null
+  category: string
+  variables: string[]
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
+export type SavedFilter = {
+  id: string
+  name: string
+  entity: string
+  filters: Record<string, unknown>
+  is_default: boolean
+  created_by: string
+  created_at: string
+}
+
+export type Workflow = {
+  id: string
+  name: string
+  description: string | null
+  trigger_type: string
+  trigger_config: Record<string, unknown>
+  actions: Record<string, unknown>[]
+  active: boolean
+  run_count: number
+  last_run_at: string | null
+  created_by: string
+  created_at: string
+  updated_at: string
+}

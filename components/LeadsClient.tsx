@@ -5,10 +5,12 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Modal } from './Modal'
 import { LeadForm } from './LeadForm'
-import { updateLeadStage, deleteLead, markLeadReviewed } from '@/lib/actions'
+import { CSVImport } from './CSVImport'
+import { updateLeadStage, deleteLead, markLeadReviewed, bulkUpdateLeadStage, bulkDeleteLeads, bulkMarkReviewed } from '@/lib/actions'
 import {
   Plus,
   Download,
+  Upload,
   Mail,
   Phone,
   Linkedin,
@@ -24,7 +26,8 @@ import {
   Star,
   Crown,
   TrendingUp,
-  Target
+  Target,
+  X
 } from 'lucide-react'
 
 interface Lead {
@@ -104,6 +107,9 @@ export function LeadsClient({
   const [filter, setFilter] = useState<string>('all')
   const [verticalFilter, setVerticalFilter] = useState<string>('all')
   const [isLoading, setIsLoading] = useState<string | null>(null)
+  const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set())
+  const [isBulkLoading, setIsBulkLoading] = useState(false)
+  const [isCSVModalOpen, setIsCSVModalOpen] = useState(false)
 
   // Extract unique verticals from leads if not provided
   const uniqueVerticals = verticals.length > 0 ? verticals :
@@ -170,6 +176,51 @@ export function LeadsClient({
     await markLeadReviewed(leadId, reviewed)
     router.refresh()
     setIsLoading(null)
+  }
+
+  const toggleLeadSelection = (leadId: string) => {
+    setSelectedLeads(prev => {
+      const next = new Set(prev)
+      if (next.has(leadId)) next.delete(leadId)
+      else next.add(leadId)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedLeads.size === filteredLeads.length) {
+      setSelectedLeads(new Set())
+    } else {
+      setSelectedLeads(new Set(filteredLeads.map(l => l.id)))
+    }
+  }
+
+  const handleBulkStageChange = async (stage: string) => {
+    if (selectedLeads.size === 0) return
+    setIsBulkLoading(true)
+    await bulkUpdateLeadStage(Array.from(selectedLeads), stage)
+    setSelectedLeads(new Set())
+    router.refresh()
+    setIsBulkLoading(false)
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedLeads.size === 0) return
+    if (!confirm(`${selectedLeads.size} Leads wirklich löschen?`)) return
+    setIsBulkLoading(true)
+    await bulkDeleteLeads(Array.from(selectedLeads))
+    setSelectedLeads(new Set())
+    router.refresh()
+    setIsBulkLoading(false)
+  }
+
+  const handleBulkMarkReviewed = async (reviewed: boolean) => {
+    if (selectedLeads.size === 0) return
+    setIsBulkLoading(true)
+    await bulkMarkReviewed(Array.from(selectedLeads), reviewed)
+    setSelectedLeads(new Set())
+    router.refresh()
+    setIsBulkLoading(false)
   }
 
   const hotLeadsCount = leads.filter(l => l.outreach_priority === 'hot').length
@@ -348,6 +399,27 @@ export function LeadsClient({
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button
+            onClick={() => setIsCSVModalOpen(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 18px',
+              background: 'var(--color-bg)',
+              border: '1px solid var(--color-border)',
+              borderRadius: '12px',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: 'var(--color-text-secondary)',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            className="hover:bg-[var(--color-bg-secondary)] hover:border-[var(--color-border-strong)]"
+          >
+            <Upload size={16} />
+            CSV Import
+          </button>
+          <button
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -391,6 +463,105 @@ export function LeadsClient({
           </button>
         </div>
       </div>
+
+      {/* Bulk Action Bar */}
+      {selectedLeads.size > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '14px 20px',
+            marginBottom: '16px',
+            background: 'rgba(0, 122, 255, 0.06)',
+            border: '1px solid rgba(0, 122, 255, 0.2)',
+            borderRadius: '16px',
+            transition: 'all 0.2s'
+          }}
+        >
+          <span style={{ fontSize: '14px', fontWeight: 600, color: '#007AFF' }}>
+            {selectedLeads.size} ausgewählt
+          </span>
+          <div style={{ width: '1px', height: '24px', background: 'rgba(0, 122, 255, 0.2)' }} />
+          <button
+            onClick={() => handleBulkMarkReviewed(true)}
+            disabled={isBulkLoading}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '8px 14px', borderRadius: '10px', border: '1px solid var(--color-border)',
+              background: 'var(--color-bg)', fontSize: '13px', fontWeight: 500,
+              color: '#34C759', cursor: 'pointer', transition: 'all 0.2s'
+            }}
+          >
+            <CheckCircle2 size={14} /> Ready
+          </button>
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setActiveDropdown(activeDropdown === 'bulk-stage' ? null : 'bulk-stage')}
+              disabled={isBulkLoading}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '8px 14px', borderRadius: '10px', border: '1px solid var(--color-border)',
+                background: 'var(--color-bg)', fontSize: '13px', fontWeight: 500,
+                color: 'var(--color-text-secondary)', cursor: 'pointer', transition: 'all 0.2s'
+              }}
+            >
+              Stage ändern <ChevronDown size={14} />
+            </button>
+            {activeDropdown === 'bulk-stage' && (
+              <div
+                style={{
+                  position: 'absolute', top: '100%', left: 0, marginTop: '8px',
+                  minWidth: '180px', background: 'var(--color-bg)',
+                  border: '1px solid var(--color-border)', borderRadius: '14px',
+                  padding: '8px', boxShadow: '0 12px 40px rgba(0,0,0,0.12)', zIndex: 100
+                }}
+              >
+                {STAGES.map((stage) => (
+                  <button
+                    key={stage.value}
+                    onClick={() => { handleBulkStageChange(stage.value); setActiveDropdown(null); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '12px',
+                      width: '100%', padding: '10px 14px', background: 'transparent',
+                      border: 'none', borderRadius: '8px', fontSize: '14px',
+                      color: 'var(--color-text)', cursor: 'pointer', textAlign: 'left'
+                    }}
+                    className="hover:bg-[var(--color-bg-secondary)]"
+                  >
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: stage.color }} />
+                    {stage.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <button
+            onClick={handleBulkDelete}
+            disabled={isBulkLoading}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '8px 14px', borderRadius: '10px', border: '1px solid rgba(255, 59, 48, 0.3)',
+              background: 'rgba(255, 59, 48, 0.06)', fontSize: '13px', fontWeight: 500,
+              color: '#FF3B30', cursor: 'pointer', transition: 'all 0.2s'
+            }}
+          >
+            <Trash2 size={14} /> Löschen
+          </button>
+          <div style={{ flex: 1 }} />
+          <button
+            onClick={() => setSelectedLeads(new Set())}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: '32px', height: '32px', borderRadius: '8px',
+              border: 'none', background: 'transparent',
+              color: 'var(--color-text-tertiary)', cursor: 'pointer'
+            }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
       {/* Filters - Modern Pill Style */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -605,7 +776,15 @@ export function LeadsClient({
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              <th style={{ width: '28%' }}>
+              <th style={{ width: '40px', padding: '12px 0 12px 20px' }}>
+                <input
+                  type="checkbox"
+                  checked={filteredLeads.length > 0 && selectedLeads.size === filteredLeads.length}
+                  onChange={toggleSelectAll}
+                  style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#007AFF' }}
+                />
+              </th>
+              <th style={{ width: '26%' }}>
                 <span className="flex items-center gap-2">Lead <ArrowUpDown size={12} /></span>
               </th>
               <th style={{ width: '10%' }}>
@@ -628,7 +807,15 @@ export function LeadsClient({
                 const stageInfo = getStageInfo(lead.stage || 'new')
 
                 return (
-                  <tr key={lead.id} className={`${isLoading === lead.id ? 'opacity-50' : ''} group`}>
+                  <tr key={lead.id} className={`${isLoading === lead.id ? 'opacity-50' : ''} group`} style={{ background: selectedLeads.has(lead.id) ? 'rgba(0, 122, 255, 0.03)' : undefined }}>
+                    <td style={{ padding: '12px 0 12px 20px', width: '40px' }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedLeads.has(lead.id)}
+                        onChange={() => toggleLeadSelection(lead.id)}
+                        style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#007AFF' }}
+                      />
+                    </td>
                     <td>
                       <Link href={`/leads/${lead.id}`} className="lead-name-cell">
                         <div className="lead-avatar">{initials}</div>
@@ -823,7 +1010,7 @@ export function LeadsClient({
               })
             ) : (
               <tr>
-                <td colSpan={7}>
+                <td colSpan={8}>
                   <div className="empty-state">
                     <div className="empty-state-icon">
                       {activeTab === 'inbox' ? <Inbox size={24} /> : activeTab === 'ready' ? <CheckCircle2 size={24} /> : <Users size={24} />}
@@ -853,6 +1040,13 @@ export function LeadsClient({
 
       <Modal isOpen={!!editingLead} onClose={() => setEditingLead(null)} title="Lead bearbeiten" size="lg">
         {editingLead && <LeadForm lead={editingLead} onSuccess={() => setEditingLead(null)} onCancel={() => setEditingLead(null)} />}
+      </Modal>
+
+      <Modal isOpen={isCSVModalOpen} onClose={() => setIsCSVModalOpen(false)} title="CSV Import" size="lg">
+        <CSVImport
+          onSuccess={() => setIsCSVModalOpen(false)}
+          onCancel={() => setIsCSVModalOpen(false)}
+        />
       </Modal>
 
       {activeDropdown && <div className="fixed inset-0 z-40" onClick={() => setActiveDropdown(null)} />}

@@ -192,7 +192,7 @@ export async function markLeadReviewed(id: string, reviewed: boolean) {
 
 export type ActivityFormData = {
   lead_id: string
-  type: 'note' | 'call' | 'email_sent' | 'email_received' | 'meeting' | 'linkedin_message'
+  type: 'note' | 'call' | 'email_sent' | 'email_received' | 'meeting' | 'linkedin_message' | 'whatsapp' | 'sms' | 'video_call'
   subject: string
   body?: string
   scheduled_for?: string
@@ -433,6 +433,256 @@ export async function searchLeads(query: string) {
   }
 
   return data
+}
+
+// ============================================
+// EMAIL TEMPLATE ACTIONS
+// ============================================
+
+export async function getEmailTemplates() {
+  const { data, error } = await supabase
+    .from('email_templates')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching templates:', error)
+    return []
+  }
+  return data
+}
+
+export async function createEmailTemplate(data: {
+  name: string
+  subject: string
+  body: string
+  vertical?: string
+  category?: string
+  variables?: string[]
+}) {
+  const { data: template, error } = await supabase
+    .from('email_templates')
+    .insert({
+      ...data,
+      created_by: 'user',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error creating template:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/settings/templates')
+  return { success: true, template }
+}
+
+export async function updateEmailTemplate(id: string, data: {
+  name?: string
+  subject?: string
+  body?: string
+  vertical?: string
+  category?: string
+  variables?: string[]
+}) {
+  const { error } = await supabase
+    .from('email_templates')
+    .update({
+      ...data,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error updating template:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/settings/templates')
+  return { success: true }
+}
+
+export async function deleteEmailTemplate(id: string) {
+  const { error } = await supabase
+    .from('email_templates')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error deleting template:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/settings/templates')
+  return { success: true }
+}
+
+// ============================================
+// SAVED FILTER ACTIONS
+// ============================================
+
+export async function getSavedFilters(entity: string = 'leads') {
+  const { data, error } = await supabase
+    .from('saved_filters')
+    .select('*')
+    .eq('entity', entity)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching saved filters:', error)
+    return []
+  }
+  return data
+}
+
+export async function createSavedFilter(data: {
+  name: string
+  entity: string
+  filters: Record<string, unknown>
+}) {
+  const { data: filter, error } = await supabase
+    .from('saved_filters')
+    .insert({
+      ...data,
+      created_by: 'user',
+      created_at: new Date().toISOString()
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error creating saved filter:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/leads')
+  return { success: true, filter }
+}
+
+export async function deleteSavedFilter(id: string) {
+  const { error } = await supabase
+    .from('saved_filters')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error deleting saved filter:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/leads')
+  return { success: true }
+}
+
+// ============================================
+// BULK ACTIONS
+// ============================================
+
+export async function bulkUpdateLeadStage(leadIds: string[], stage: string) {
+  const { error } = await supabase
+    .from('leads')
+    .update({
+      stage,
+      updated_at: new Date().toISOString()
+    })
+    .in('id', leadIds)
+
+  if (error) {
+    console.error('Error bulk updating stage:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/leads')
+  revalidatePath('/')
+  return { success: true }
+}
+
+export async function bulkDeleteLeads(leadIds: string[]) {
+  const { error } = await supabase
+    .from('leads')
+    .update({
+      deleted_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    .in('id', leadIds)
+
+  if (error) {
+    console.error('Error bulk deleting leads:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/leads')
+  revalidatePath('/')
+  return { success: true }
+}
+
+export async function bulkMarkReviewed(leadIds: string[], reviewed: boolean) {
+  const { error } = await supabase
+    .from('leads')
+    .update({
+      reviewed,
+      updated_at: new Date().toISOString()
+    })
+    .in('id', leadIds)
+
+  if (error) {
+    console.error('Error bulk marking reviewed:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/leads')
+  revalidatePath('/')
+  return { success: true }
+}
+
+// ============================================
+// CSV IMPORT
+// ============================================
+
+export async function importLeadsFromCSV(leads: Partial<LeadFormData>[]) {
+  const leadsToInsert = leads.map(lead => ({
+    ...lead,
+    stage: lead.stage || 'new',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    created_by: 'csv_import',
+    updated_by: 'csv_import'
+  }))
+
+  const { data, error } = await supabase
+    .from('leads')
+    .insert(leadsToInsert)
+    .select()
+
+  if (error) {
+    console.error('Error importing leads:', error)
+    return { success: false, error: error.message, count: 0 }
+  }
+
+  revalidatePath('/leads')
+  revalidatePath('/')
+  return { success: true, count: data?.length || 0 }
+}
+
+// ============================================
+// REPORTING
+// ============================================
+
+export async function getReportData() {
+  const [leadsResult, dealsResult, activitiesResult] = await Promise.all([
+    supabase.from('leads').select('*').is('deleted_at', null),
+    supabase.from('deals').select('*'),
+    supabase.from('activities').select('*').order('created_at', { ascending: false })
+  ])
+
+  return {
+    leads: leadsResult.data || [],
+    deals: dealsResult.data || [],
+    activities: activitiesResult.data || []
+  }
 }
 
 // ============================================

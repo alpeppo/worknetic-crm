@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { createActivity, type ActivityFormData } from '@/lib/actions'
-import { Loader2, Phone, Mail, MessageSquare, Calendar, Linkedin, Send } from 'lucide-react'
+import { Loader2, Phone, Mail, MessageSquare, Calendar, Linkedin, Send, Video, Smartphone, MessageCircle } from 'lucide-react'
 
 interface ActivityFormProps {
   leadId: string
@@ -16,7 +16,10 @@ const ACTIVITY_TYPES = [
   { value: 'email_sent', label: 'E-Mail gesendet', icon: Send },
   { value: 'email_received', label: 'E-Mail erhalten', icon: Mail },
   { value: 'meeting', label: 'Meeting', icon: Calendar },
-  { value: 'linkedin_message', label: 'LinkedIn Nachricht', icon: Linkedin },
+  { value: 'video_call', label: 'Video Call', icon: Video },
+  { value: 'linkedin_message', label: 'LinkedIn', icon: Linkedin },
+  { value: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
+  { value: 'sms', label: 'SMS', icon: Smartphone },
 ]
 
 export function ActivityForm({ leadId, onSuccess, onCancel }: ActivityFormProps) {
@@ -107,6 +110,9 @@ export function ActivityForm({ leadId, onSuccess, onCancel }: ActivityFormProps)
             selectedType === 'call' ? 'z.B. Discovery Call geführt' :
             selectedType === 'email_sent' ? 'z.B. Angebot versendet' :
             selectedType === 'meeting' ? 'z.B. Erstgespräch vereinbart' :
+            selectedType === 'video_call' ? 'z.B. Zoom Call mit Entscheider' :
+            selectedType === 'whatsapp' ? 'z.B. WhatsApp Nachricht gesendet' :
+            selectedType === 'sms' ? 'z.B. Termin-Erinnerung per SMS' :
             'z.B. Wichtige Info zum Lead'
           }
         />
@@ -137,7 +143,7 @@ export function ActivityForm({ leadId, onSuccess, onCancel }: ActivityFormProps)
               Speichern...
             </>
           ) : (
-            'Activity hinzufügen'
+            'Aktivität hinzufügen'
           )}
         </button>
       </div>
