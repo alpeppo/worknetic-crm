@@ -212,7 +212,7 @@ export async function generateOutreachEmail(
         { role: 'user', content: userPrompt },
       ],
       temperature: 0.7,
-      max_tokens: 600,
+      max_tokens: 4096,
     })
 
     const raw = completion.choices[0]?.message?.content
