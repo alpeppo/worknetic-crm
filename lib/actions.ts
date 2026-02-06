@@ -331,7 +331,7 @@ export async function deleteDeal(id: string) {
   return { success: true }
 }
 
-export async function updateDealStage(id: string, stage: string) {
+export async function updateDealStage(id: string, stage: string, lostReason?: string, lostNotes?: string) {
   const updateData: Record<string, unknown> = {
     stage,
     updated_at: new Date().toISOString()
@@ -342,6 +342,10 @@ export async function updateDealStage(id: string, stage: string) {
     updateData.closed_at = new Date().toISOString()
     if (stage === 'won') {
       updateData.actual_close_date = new Date().toISOString()
+    }
+    if (stage === 'lost') {
+      if (lostReason) updateData.lost_reason = lostReason
+      if (lostNotes) updateData.lost_notes = lostNotes
     }
   }
 

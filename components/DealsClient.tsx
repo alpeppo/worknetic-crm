@@ -3,8 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Modal } from './Modal'
-import { createDeal, updateDealStage, updateDeal, deleteDeal } from '@/lib/actions'
-import { Plus, Loader2, GripVertical, Edit2, Trash2, TrendingUp, DollarSign, Briefcase, Target } from 'lucide-react'
+import { createDeal, updateDealStage, updateDeal, deleteDeal, createActivity } from '@/lib/actions'
+import { Plus, Loader2, GripVertical, Edit2, Trash2, TrendingUp, DollarSign, Target, Clock, MessageSquare, XCircle, Percent } from 'lucide-react'
 
 interface Deal {
   id: string
@@ -15,6 +15,10 @@ interface Deal {
   probability?: number
   expected_close_date?: string
   notes?: string
+  created_at?: string
+  updated_at?: string
+  lost_reason?: string
+  lost_notes?: string
 }
 
 interface Lead {
@@ -35,6 +39,7 @@ const STAGES = [
   { id: 'proposal', name: 'Proposal', color: '#f59e0b' },
   { id: 'negotiation', name: 'Negotiation', color: '#ef4444' },
   { id: 'won', name: 'Won', color: '#10b981' },
+  { id: 'lost', name: 'Lost', color: '#8e8e93' },
 ]
 
 export function DealsClient({ deals, leads, headerOnly = false }: DealsClientProps) {
@@ -44,6 +49,14 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
   const [error, setError] = useState<string | null>(null)
   const [editingDeal, setEditingDeal] = useState<Deal | null>(null)
   const [deletingDealId, setDeletingDealId] = useState<string | null>(null)
+  // Lost reason modal
+  const [lostDealId, setLostDealId] = useState<string | null>(null)
+  const [lostReason, setLostReason] = useState('')
+  const [lostNotes, setLostNotes] = useState('')
+  // Quick note
+  const [quickNoteDealId, setQuickNoteDealId] = useState<string | null>(null)
+  const [quickNoteText, setQuickNoteText] = useState('')
+  const [quickNoteLoading, setQuickNoteLoading] = useState(false)
   const [formData, setFormData] = useState({
     lead_id: '',
     name: '',
@@ -73,10 +86,15 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
   }, {} as Record<string, number>)
 
   // Stats — computed from localDeals so they update optimistically on drag & drop
-  const totalDeals = localDeals.length
   const pipelineValue = localDeals.reduce((sum, d) => sum + (d.value || 0), 0)
   const wonValue = localDeals.filter(d => d.stage === 'won').reduce((sum, d) => sum + (d.value || 0), 0)
-  const avgDealSize = localDeals.length ? Math.round(pipelineValue / localDeals.length) : 0
+  const weightedPipeline = localDeals
+    .filter(d => d.stage !== 'won' && d.stage !== 'lost')
+    .reduce((sum, d) => sum + (d.value || 0) * ((d.probability || 50) / 100), 0)
+  const closedDeals = localDeals.filter(d => d.stage === 'won' || d.stage === 'lost')
+  const winRate = closedDeals.length > 0
+    ? Math.round((localDeals.filter(d => d.stage === 'won').length / closedDeals.length) * 100)
+    : 0
 
   const resetForm = () => {
     setFormData({ lead_id: '', name: '', value: '', probability: '50', expected_close_date: '', notes: '' })
@@ -169,6 +187,14 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
     const deal = localDeals.find(d => d.id === dealId)
     if (!deal || deal.stage === newStage) return
 
+    // If dropping to "lost", open lost reason modal instead of direct drop
+    if (newStage === 'lost') {
+      setLostDealId(dealId)
+      setLostReason('')
+      setLostNotes('')
+      return
+    }
+
     // Optimistic update — move card immediately in UI
     setLocalDeals(prev => prev.map(d =>
       d.id === dealId ? { ...d, stage: newStage } : d
@@ -184,6 +210,38 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
     }
     router.refresh()
   }, [localDeals, router])
+
+  const confirmLostDeal = async () => {
+    if (!lostDealId) return
+    // Optimistic update
+    setLocalDeals(prev => prev.map(d =>
+      d.id === lostDealId ? { ...d, stage: 'lost', lost_reason: lostReason, lost_notes: lostNotes } : d
+    ))
+    setLostDealId(null)
+    const result = await updateDealStage(lostDealId, 'lost', lostReason || undefined, lostNotes || undefined)
+    if (!result.success) {
+      setLocalDeals(deals)
+    }
+    router.refresh()
+  }
+
+  const handleQuickNote = async () => {
+    if (!quickNoteDealId || !quickNoteText.trim()) return
+    setQuickNoteLoading(true)
+    const deal = localDeals.find(d => d.id === quickNoteDealId)
+    if (deal) {
+      await createActivity({
+        lead_id: deal.lead_id,
+        type: 'note',
+        subject: `Notiz zu Deal: ${deal.name}`,
+        body: quickNoteText.trim()
+      })
+    }
+    setQuickNoteLoading(false)
+    setQuickNoteDealId(null)
+    setQuickNoteText('')
+    router.refresh()
+  }
 
   useEffect(() => {
     const board = boardRef.current
@@ -510,13 +568,13 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Deals</span>
+            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Gewichtet</span>
             <div style={{ width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(175, 82, 222, 0.1)' }}>
-              <Briefcase size={22} style={{ color: '#AF52DE' }} />
+              <Target size={22} style={{ color: '#AF52DE' }} />
             </div>
           </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.5px' }}>{totalDeals}</div>
-          <p style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', marginTop: '8px' }}>In der Pipeline</p>
+          <div style={{ fontSize: '32px', fontWeight: 700, color: '#AF52DE', letterSpacing: '-0.5px' }}>€{(weightedPipeline / 1000).toFixed(0)}k</div>
+          <p style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', marginTop: '8px' }}>Pipeline × Probability</p>
         </div>
         <div
           style={{
@@ -528,13 +586,13 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Ø Deal</span>
+            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Win Rate</span>
             <div style={{ width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255, 149, 0, 0.1)' }}>
-              <Target size={22} style={{ color: '#FF9500' }} />
+              <Percent size={22} style={{ color: '#FF9500' }} />
             </div>
           </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.5px' }}>€{avgDealSize.toLocaleString()}</div>
-          <p style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', marginTop: '8px' }}>Durchschnitt</p>
+          <div style={{ fontSize: '32px', fontWeight: 700, color: '#FF9500', letterSpacing: '-0.5px' }}>{winRate}%</div>
+          <p style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', marginTop: '8px' }}>{closedDeals.length} abgeschlossen</p>
         </div>
       </div>
 
@@ -591,6 +649,13 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
                           </div>
                           <div className="flex items-center gap-0.5">
                             <button
+                              onClick={(e) => { e.stopPropagation(); setQuickNoteDealId(deal.id); setQuickNoteText(''); }}
+                              className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-[rgba(0,122,255,0.1)] text-muted hover:text-[#007AFF] transition-all"
+                              title="Schnelle Notiz"
+                            >
+                              <MessageSquare size={14} />
+                            </button>
+                            <button
                               onClick={(e) => { e.stopPropagation(); openEditModal(deal); }}
                               className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-[var(--color-bg-secondary)] text-muted hover:text-[var(--color-text)] transition-all"
                             >
@@ -619,12 +684,35 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
                             {deal.probability || 0}%
                           </div>
                         </div>
-                        {deal.expected_close_date && (
-                          <div className="text-xs text-muted mt-2">
-                            Close: {new Date(deal.expected_close_date).toLocaleDateString('de-DE', {
-                              day: '2-digit',
-                              month: 'short'
-                            })}
+                        <div className="flex items-center justify-between mt-2">
+                          {deal.created_at && (() => {
+                            const days = Math.floor((Date.now() - new Date(deal.created_at).getTime()) / (1000 * 60 * 60 * 24))
+                            const isStale = days > 30
+                            return (
+                              <div className="flex items-center gap-1 text-xs" style={{ color: isStale ? '#FF3B30' : 'var(--color-text-tertiary)' }}>
+                                <Clock size={11} />
+                                {days}d
+                              </div>
+                            )
+                          })()}
+                          {deal.expected_close_date && (
+                            <div className="text-xs text-muted">
+                              Close: {new Date(deal.expected_close_date).toLocaleDateString('de-DE', {
+                                day: '2-digit',
+                                month: 'short'
+                              })}
+                            </div>
+                          )}
+                        </div>
+                        {deal.stage === 'lost' && deal.lost_reason && (
+                          <div className="mt-2 px-2 py-1 rounded-md text-xs" style={{ background: 'rgba(255,59,48,0.08)', color: '#FF3B30' }}>
+                            {deal.lost_reason === 'budget' && 'Budget / Zu teuer'}
+                            {deal.lost_reason === 'timing' && 'Timing'}
+                            {deal.lost_reason === 'competitor' && 'Wettbewerber'}
+                            {deal.lost_reason === 'no_need' && 'Kein Bedarf'}
+                            {deal.lost_reason === 'no_response' && 'Keine Rückmeldung'}
+                            {deal.lost_reason === 'bad_fit' && 'Passt nicht'}
+                            {deal.lost_reason === 'other' && 'Sonstiges'}
                           </div>
                         )}
                       </div>
@@ -650,31 +738,6 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
         })}
       </div>
 
-      {/* Lost Deals Section (if any) */}
-      {deals.some(d => d.stage === 'lost') && (
-        <div className="mt-8">
-          <h3 className="text-lg font-semibold mb-4 text-muted">Verlorene Deals</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {deals
-              .filter(d => d.stage === 'lost')
-              .map((deal) => {
-                const lead = deal.lead_id ? leadMap.get(deal.lead_id) : null
-                return (
-                  <div key={deal.id} className="card" style={{ opacity: 0.7 }}>
-                    <div className="card-body">
-                      <div className="font-semibold">{deal.name}</div>
-                      <div className="text-sm text-muted">{lead?.company || '–'}</div>
-                      <div className="text-sm text-danger mt-2">
-                        €{(deal.value || 0).toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-          </div>
-        </div>
-      )}
-
       {/* Create/Edit Deal Modal */}
       <Modal
         isOpen={isModalOpen}
@@ -683,6 +746,103 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
         size="md"
       >
         {modalContent}
+      </Modal>
+
+      {/* Lost Reason Modal */}
+      <Modal
+        isOpen={!!lostDealId}
+        onClose={() => setLostDealId(null)}
+        title="Deal als verloren markieren"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px', background: 'rgba(255,59,48,0.06)', borderRadius: '12px', border: '1px solid rgba(255,59,48,0.15)' }}>
+            <XCircle size={20} style={{ color: '#FF3B30', flexShrink: 0 }} />
+            <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+              Warum wurde dieser Deal verloren? Diese Info hilft, den Sales-Prozess zu verbessern.
+            </p>
+          </div>
+          <div>
+            <label className="form-label">Grund</label>
+            <select
+              value={lostReason}
+              onChange={(e) => setLostReason(e.target.value)}
+              className="form-input"
+            >
+              <option value="">Grund auswählen...</option>
+              <option value="budget">Budget / Zu teuer</option>
+              <option value="timing">Timing / Nicht jetzt</option>
+              <option value="competitor">Wettbewerber gewählt</option>
+              <option value="no_need">Kein Bedarf mehr</option>
+              <option value="no_response">Keine Rückmeldung</option>
+              <option value="bad_fit">Passt nicht zusammen</option>
+              <option value="other">Sonstiges</option>
+            </select>
+          </div>
+          <div>
+            <label className="form-label">Notizen (optional)</label>
+            <textarea
+              value={lostNotes}
+              onChange={(e) => setLostNotes(e.target.value)}
+              className="form-input"
+              rows={3}
+              placeholder="Was genau ist passiert? Was können wir daraus lernen?"
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-4 border-t border-[var(--border-light)]">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setLostDealId(null)}
+            >
+              Abbrechen
+            </button>
+            <button
+              type="button"
+              className="btn"
+              style={{ background: '#FF3B30', color: 'white', border: 'none' }}
+              onClick={confirmLostDeal}
+            >
+              Als verloren markieren
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Quick Note Modal */}
+      <Modal
+        isOpen={!!quickNoteDealId}
+        onClose={() => setQuickNoteDealId(null)}
+        title="Schnelle Notiz"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <textarea
+            value={quickNoteText}
+            onChange={(e) => setQuickNoteText(e.target.value)}
+            className="form-input"
+            rows={4}
+            placeholder="Notiz eingeben..."
+            autoFocus
+          />
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setQuickNoteDealId(null)}
+            >
+              Abbrechen
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={quickNoteLoading || !quickNoteText.trim()}
+              onClick={handleQuickNote}
+            >
+              {quickNoteLoading ? <Loader2 size={16} className="animate-spin" /> : 'Speichern'}
+            </button>
+          </div>
+        </div>
       </Modal>
     </>
   )
