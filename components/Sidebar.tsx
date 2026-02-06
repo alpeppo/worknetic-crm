@@ -24,11 +24,14 @@ import {
   BarChart3,
   Mail,
   Calendar,
+  Inbox,
+  Zap,
   LogOut
 } from 'lucide-react'
 
 const mainNavigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Inbox', href: '/inbox', icon: Inbox },
   { name: 'Leads', href: '/leads', icon: Users },
   { name: 'Deals', href: '/deals', icon: Briefcase },
   { name: 'Reports', href: '/reports', icon: BarChart3 },
@@ -38,6 +41,7 @@ const secondaryNavigation = [
   { name: 'Verticals', href: '/verticals', icon: Target },
   { name: 'Aktivitäten', href: '/activities', icon: Activity },
   { name: 'Kalender', href: '/calendar', icon: Calendar },
+  { name: 'Workflows', href: '/settings/workflows', icon: Zap },
   { name: 'Templates', href: '/settings/templates', icon: Mail },
 ]
 

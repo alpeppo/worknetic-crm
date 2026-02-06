@@ -3,6 +3,9 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Header } from '@/components/Header'
 import { LeadDetailClient } from '@/components/LeadDetailClient'
+import { LeadScoreInsights } from '@/components/LeadScoreInsights'
+import { DocumentManager } from '@/components/DocumentManager'
+import { getLeadDocuments } from '@/lib/documents'
 import {
   ArrowLeft,
   Mail,
@@ -41,7 +44,12 @@ export default async function LeadDetailPage({
     .select('*')
     .eq('lead_id', id)
     .order('created_at', { ascending: false })
-    .limit(20)
+    .limit(50)
+
+  const documents = await getLeadDocuments(id)
+
+  const activityCount = activities?.length || 0
+  const lastActivityDate = activities && activities.length > 0 ? activities[0].created_at : null
 
   const scoreNotes = lead.score_notes || {}
   const score = lead.lead_score || 0
@@ -401,6 +409,19 @@ export default async function LeadDetailPage({
                 )}
               </div>
             </div>
+
+            {/* Lead Score Insights */}
+            <LeadScoreInsights
+              lead={lead}
+              activityCount={activityCount}
+              lastActivityDate={lastActivityDate}
+            />
+
+            {/* Document Manager */}
+            <DocumentManager
+              leadId={id}
+              documents={documents}
+            />
           </div>
         </div>
       </div>
