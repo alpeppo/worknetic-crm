@@ -4,6 +4,11 @@ import * as cheerio from 'cheerio'
 // Types
 // ---------------------------------------------------------------------------
 
+export interface FoundContact {
+  value: string
+  source: 'website' | 'ai' | 'existing'
+}
+
 export interface EnrichmentResult {
   email: string | null
   phone: string | null
@@ -11,8 +16,8 @@ export interface EnrichmentResult {
   company_description: string | null
   business_processes: string | null
   enrichment_source: 'website' | 'perplexity' | 'both' | null
-  all_emails_found: string[]
-  all_phones_found: string[]
+  all_emails_found: FoundContact[]
+  all_phones_found: FoundContact[]
   enriched_at: string
   status: 'complete' | 'partial' | 'failed'
   error?: string
@@ -456,28 +461,67 @@ export async function enrichLead(lead: {
     // Step 3: Combine results
     // ------------------------------------------------------------------
 
-    // Collect all emails
-    const allEmails: string[] = []
-    if (lead.email) allEmails.push(lead.email.toLowerCase())
-    if (scraped?.emails) allEmails.push(...scraped.emails)
-    if (perplexityData?.email) allEmails.push(perplexityData.email.toLowerCase())
-    result.all_emails_found = dedupe(allEmails)
+    // Collect all emails with source tagging
+    const allEmails: FoundContact[] = []
+    const seenEmails = new Set<string>()
+    if (lead.email) {
+      const val = lead.email.toLowerCase()
+      allEmails.push({ value: val, source: 'existing' })
+      seenEmails.add(val)
+    }
+    if (scraped?.emails) {
+      for (const e of scraped.emails) {
+        const val = e.toLowerCase()
+        if (!seenEmails.has(val)) {
+          allEmails.push({ value: val, source: 'website' })
+          seenEmails.add(val)
+        }
+      }
+    }
+    if (perplexityData?.email) {
+      const val = perplexityData.email.toLowerCase()
+      if (!seenEmails.has(val)) {
+        allEmails.push({ value: val, source: 'ai' })
+        seenEmails.add(val)
+      }
+    }
+    result.all_emails_found = allEmails
 
-    // Collect all phones
-    const allPhones: string[] = []
-    if (lead.phone) allPhones.push(normalizePhone(lead.phone))
-    if (scraped?.phones) allPhones.push(...scraped.phones)
-    if (perplexityData?.phone) allPhones.push(perplexityData.phone)
-    result.all_phones_found = dedupe(allPhones.filter(Boolean))
+    // Collect all phones with source tagging
+    const allPhones: FoundContact[] = []
+    const seenPhones = new Set<string>()
+    if (lead.phone) {
+      const val = normalizePhone(lead.phone)
+      allPhones.push({ value: val, source: 'existing' })
+      seenPhones.add(val)
+    }
+    if (scraped?.phones) {
+      for (const p of scraped.phones) {
+        if (!seenPhones.has(p)) {
+          allPhones.push({ value: p, source: 'website' })
+          seenPhones.add(p)
+        }
+      }
+    }
+    if (perplexityData?.phone) {
+      const val = perplexityData.phone
+      if (!seenPhones.has(val)) {
+        allPhones.push({ value: val, source: 'ai' })
+        seenPhones.add(val)
+      }
+    }
+    result.all_phones_found = allPhones.filter((p) => p.value.length >= 8)
 
-    // Pick the best email (prefer personal over generic)
+    // Pick the best email (prefer existing > website > ai, personal over generic)
     if (!result.email) {
-      result.email = pickBestEmail(result.all_emails_found)
+      const emailValues = result.all_emails_found.map((e) => e.value)
+      result.email = pickBestEmail(emailValues)
     }
 
-    // Pick the best phone
+    // Pick the best phone (prefer existing > website > ai)
     if (!result.phone) {
-      result.phone = pickBestPhone(result.all_phones_found)
+      const phoneValues = result.all_phones_found.map((p) => p.value)
+      result.phone = pickBestPhone(phoneValues)
     }
 
     // Website: prefer what we already have, fall back to Perplexity

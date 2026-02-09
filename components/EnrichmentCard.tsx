@@ -11,6 +11,8 @@ import {
   CheckCircle,
   XCircle,
   Building2,
+  AlertTriangle,
+  ShieldCheck,
 } from 'lucide-react'
 
 interface EnrichmentCardProps {
@@ -237,114 +239,128 @@ export function EnrichmentCard({ enrichmentActivity, leadId }: EnrichmentCardPro
             </span>
 
             {/* Emails */}
-            {enrichment.all_emails_found?.map((email: string, idx: number) => (
-              <div
-                key={`email-${idx}`}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '6px 0',
-                  borderBottom:
-                    idx < enrichment.all_emails_found.length - 1 ||
-                    enrichment.all_phones_found?.length > 0
-                      ? '1px solid var(--color-border)'
-                      : 'none',
-                }}
-              >
-                <Mail size={14} style={{ color: 'var(--color-blue)', flexShrink: 0 }} />
-                <span
+            {enrichment.all_emails_found?.map((entry: any, idx: number) => {
+              // Support both old format (string) and new format ({ value, source })
+              const email = typeof entry === 'string' ? entry : entry.value
+              const source = typeof entry === 'string' ? null : entry.source
+              const sourceConfig = source === 'website'
+                ? { label: 'Website', color: 'var(--color-green)', bg: 'rgba(52, 199, 89, 0.10)', icon: <ShieldCheck size={10} /> }
+                : source === 'ai'
+                  ? { label: 'KI-Recherche', color: 'var(--color-orange)', bg: 'rgba(255, 149, 0, 0.10)', icon: <AlertTriangle size={10} /> }
+                  : source === 'existing'
+                    ? { label: 'Vorhanden', color: 'var(--color-text-tertiary)', bg: 'var(--color-bg-tertiary)', icon: null }
+                    : null
+
+              return (
+                <div
+                  key={`email-${idx}`}
                   style={{
-                    fontSize: '13px',
-                    color: 'var(--color-text)',
-                    flex: 1,
-                    minWidth: 0,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '6px 0',
+                    borderBottom:
+                      idx < enrichment.all_emails_found.length - 1 ||
+                      enrichment.all_phones_found?.length > 0
+                        ? '1px solid var(--color-border)'
+                        : 'none',
                   }}
                 >
-                  {email}
-                </span>
-                {idx === 0 && enrichment.email === email && (
+                  <Mail size={14} style={{ color: 'var(--color-blue)', flexShrink: 0 }} />
                   <span
                     style={{
-                      fontSize: '10px',
-                      fontWeight: 600,
-                      padding: '2px 6px',
-                      borderRadius: '100px',
-                      color: 'var(--color-green)',
-                      background: 'rgba(52, 199, 89, 0.10)',
-                      flexShrink: 0,
+                      fontSize: '13px',
+                      color: 'var(--color-text)',
+                      flex: 1,
+                      minWidth: 0,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
                     }}
                   >
-                    Beste
+                    {email}
                   </span>
-                )}
-                {enrichment.enrichment_source && (
-                  <span
-                    style={{
-                      fontSize: '10px',
-                      fontWeight: 500,
-                      padding: '2px 6px',
-                      borderRadius: '100px',
-                      color: 'var(--color-text-tertiary)',
-                      background: 'var(--color-bg-tertiary)',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {enrichment.enrichment_source === 'both'
-                      ? 'Web + AI'
-                      : enrichment.enrichment_source === 'website'
-                        ? 'Website'
-                        : 'AI'}
-                  </span>
-                )}
-              </div>
-            ))}
+                  {sourceConfig && (
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '3px',
+                        fontSize: '10px',
+                        fontWeight: 600,
+                        padding: '2px 7px',
+                        borderRadius: '100px',
+                        color: sourceConfig.color,
+                        background: sourceConfig.bg,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {sourceConfig.icon}
+                      {sourceConfig.label}
+                    </span>
+                  )}
+                </div>
+              )
+            })}
 
             {/* Phones */}
-            {enrichment.all_phones_found?.map((phone: string, idx: number) => (
-              <div
-                key={`phone-${idx}`}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '6px 0',
-                  borderBottom:
-                    idx < enrichment.all_phones_found.length - 1
-                      ? '1px solid var(--color-border)'
-                      : 'none',
-                }}
-              >
-                <Phone size={14} style={{ color: 'var(--color-green)', flexShrink: 0 }} />
-                <span
+            {enrichment.all_phones_found?.map((entry: any, idx: number) => {
+              const phone = typeof entry === 'string' ? entry : entry.value
+              const source = typeof entry === 'string' ? null : entry.source
+              const sourceConfig = source === 'website'
+                ? { label: 'Website', color: 'var(--color-green)', bg: 'rgba(52, 199, 89, 0.10)', icon: <ShieldCheck size={10} /> }
+                : source === 'ai'
+                  ? { label: 'KI-Recherche', color: 'var(--color-orange)', bg: 'rgba(255, 149, 0, 0.10)', icon: <AlertTriangle size={10} /> }
+                  : source === 'existing'
+                    ? { label: 'Vorhanden', color: 'var(--color-text-tertiary)', bg: 'var(--color-bg-tertiary)', icon: null }
+                    : null
+
+              return (
+                <div
+                  key={`phone-${idx}`}
                   style={{
-                    fontSize: '13px',
-                    color: 'var(--color-text)',
-                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '6px 0',
+                    borderBottom:
+                      idx < enrichment.all_phones_found.length - 1
+                        ? '1px solid var(--color-border)'
+                        : 'none',
                   }}
                 >
-                  {phone}
-                </span>
-                {idx === 0 && enrichment.phone === phone && (
+                  <Phone size={14} style={{ color: 'var(--color-green)', flexShrink: 0 }} />
                   <span
                     style={{
-                      fontSize: '10px',
-                      fontWeight: 600,
-                      padding: '2px 6px',
-                      borderRadius: '100px',
-                      color: 'var(--color-green)',
-                      background: 'rgba(52, 199, 89, 0.10)',
-                      flexShrink: 0,
+                      fontSize: '13px',
+                      color: 'var(--color-text)',
+                      flex: 1,
                     }}
                   >
-                    Beste
+                    {phone}
                   </span>
-                )}
-              </div>
-            ))}
+                  {sourceConfig && (
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '3px',
+                        fontSize: '10px',
+                        fontWeight: 600,
+                        padding: '2px 7px',
+                        borderRadius: '100px',
+                        color: sourceConfig.color,
+                        background: sourceConfig.bg,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {sourceConfig.icon}
+                      {sourceConfig.label}
+                    </span>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
 
