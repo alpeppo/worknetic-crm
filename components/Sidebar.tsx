@@ -28,6 +28,7 @@ import {
   Calendar,
   Inbox,
   Zap,
+  Rocket,
   LogOut,
   Moon,
   Sun
@@ -45,6 +46,7 @@ const secondaryNavigation = [
   { name: 'Verticals', href: '/verticals', icon: Target },
   { name: 'Aktivitäten', href: '/activities', icon: Activity },
   { name: 'Kalender', href: '/calendar', icon: Calendar },
+  { name: 'Automatisierungen', href: '/automations', icon: Rocket },
   { name: 'Workflows', href: '/settings/workflows', icon: Zap },
   { name: 'Templates', href: '/settings/templates', icon: Mail },
 ]
