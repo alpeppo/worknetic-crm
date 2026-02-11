@@ -89,26 +89,33 @@ export async function POST(request: NextRequest) {
 
             // Insert into Supabase
             try {
+              const insertPayload = {
+                name: lead.name,
+                company: lead.company,
+                linkedin_url: lead.linkedin_url,
+                website: lead.website,
+                email: lead.email,
+                phone: lead.phone,
+                headline: lead.headline,
+                vertical,
+                source: 'perplexity_search',
+                stage: 'new',
+                created_by: 'system',
+                updated_by: 'system',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              }
+              console.log(`[SearchAPI] Inserting lead: ${lead.name}`)
               const { data: newLead, error: insertError } = await supabase
                 .from('leads')
-                .insert({
-                  name: lead.name,
-                  company: lead.company,
-                  linkedin_url: lead.linkedin_url,
-                  website: lead.website,
-                  email: lead.email,
-                  phone: lead.phone,
-                  headline: lead.headline,
-                  vertical,
-                  source: 'perplexity_search',
-                  stage: 'new',
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString(),
-                })
+                .insert(insertPayload)
                 .select('id')
                 .single()
 
-              if (insertError) throw insertError
+              if (insertError) {
+                console.log(`[SearchAPI] Insert error for ${lead.name}:`, insertError.message, insertError.details, insertError.hint)
+                throw insertError
+              }
 
               imported++
 
@@ -136,6 +143,8 @@ export async function POST(request: NextRequest) {
               }
             } catch (err) {
               errors++
+              const errMsg = err instanceof Error ? err.message : 'Insert fehlgeschlagen'
+              console.log(`[SearchAPI] Failed to insert ${lead.name}: ${errMsg}`)
               send({
                 type: 'profile',
                 name: lead.name,
@@ -143,7 +152,7 @@ export async function POST(request: NextRequest) {
                 linkedin_url: lead.linkedin_url,
                 imported: false,
                 duplicate: false,
-                error: err instanceof Error ? err.message.slice(0, 200) : 'Insert fehlgeschlagen',
+                error: errMsg.slice(0, 200),
               })
             }
           }
