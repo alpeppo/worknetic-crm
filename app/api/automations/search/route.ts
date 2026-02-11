@@ -17,6 +17,8 @@ export async function POST(request: NextRequest) {
   const vertical = body.vertical as string
   const maxLeads = Math.min(Math.max(body.maxLeads ?? 20, 1), 50)
 
+  console.log(`[SearchAPI] Request: vertical=${vertical}, maxLeads=${maxLeads}`)
+
   // Pre-load existing leads for dedup
   const { data: existingLeads } = await supabase
     .from('leads')
@@ -147,6 +149,7 @@ export async function POST(request: NextRequest) {
           }
         }
       } catch (err) {
+        console.log('[SearchAPI] Pipeline error:', err instanceof Error ? err.message : String(err))
         send({ type: 'error', error: err instanceof Error ? err.message : 'Pipeline-Fehler' })
       }
 

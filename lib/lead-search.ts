@@ -130,6 +130,8 @@ async function callPerplexitySearch(prompt: string): Promise<DiscoveredLead[]> {
     throw new Error('OPENROUTER_API_KEY nicht gesetzt')
   }
 
+  console.log('[LeadSearch] Calling Perplexity Sonar...')
+
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 45_000)
 
@@ -161,18 +163,26 @@ async function callPerplexitySearch(prompt: string): Promise<DiscoveredLead[]> {
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error(`OpenRouter API error: ${response.status}`, errorText)
+      console.log(`[LeadSearch] OpenRouter API error: ${response.status}`, errorText)
       throw new Error(`OpenRouter API Fehler: ${response.status}`)
     }
 
     const data = await response.json()
     const content: string | undefined = data?.choices?.[0]?.message?.content
 
+    console.log('[LeadSearch] Perplexity response length:', content?.length ?? 0)
+    if (content) {
+      console.log('[LeadSearch] Response preview:', content.slice(0, 300))
+    }
+
     if (!content) return []
 
-    return parseLeadsFromResponse(content)
+    const leads = parseLeadsFromResponse(content)
+    console.log(`[LeadSearch] Parsed ${leads.length} leads from response`)
+    return leads
   } catch (err) {
     clearTimeout(timeout)
+    console.log('[LeadSearch] Error:', err instanceof Error ? err.message : String(err))
     if (err instanceof Error && err.name === 'AbortError') {
       throw new Error('Perplexity Timeout (45s)')
     }
@@ -233,10 +243,12 @@ export async function* searchLeadsPerplexity(
 > {
   const config = VERTICAL_SEARCH_CONFIG[vertical]
   if (!config) {
-    yield { type: 'error', error: `Unbekanntes Vertical: ${vertical}` }
+    console.log(`[LeadSearch] Unknown vertical: ${vertical}. Available: ${Object.keys(VERTICAL_SEARCH_CONFIG).join(', ')}`)
+    yield { type: 'error', error: `Unbekanntes Vertical: ${vertical}. Verfügbar: ${Object.keys(VERTICAL_SEARCH_CONFIG).join(', ')}` }
     return
   }
 
+  console.log(`[LeadSearch] Starting search for vertical=${vertical}, maxLeads=${maxLeads}`)
   yield { type: 'start', vertical, max_leads: maxLeads }
 
   const foundNames: string[] = []
@@ -248,6 +260,7 @@ export async function* searchLeadsPerplexity(
     const variation = config.variations[i]
 
     try {
+      console.log(`[LeadSearch] Batch ${i + 1}/${config.variations.length}: ${variation.slice(0, 60)}...`)
       const prompt = buildSearchPrompt(
         config.base,
         variation,
