@@ -65,7 +65,7 @@ const VERTICAL_SEARCH_CONFIG: Record<string, { base: string; variations: string[
       'die eine eigene Recruiting-Agentur mit unter 20 Mitarbeitern führen',
     ],
   },
-  steuerberater_kanzlei: {
+  steuerberater: {
     base: 'selbstständige Steuerberater und Kanzleiinhaber im DACH-Raum',
     variations: [
       'die als Inhaber oder Partner einer eigenen Kanzlei tätig sind',
@@ -76,6 +76,21 @@ const VERTICAL_SEARCH_CONFIG: Record<string, { base: string; variations: string[
       'aus Köln, Wien oder Zürich',
       'die eine kleine bis mittlere Kanzlei mit unter 15 Mitarbeitern führen',
       'die sich auf E-Commerce oder Digitalunternehmen spezialisiert haben',
+    ],
+  },
+  architekten: {
+    base: 'selbstständige Architekten und Architekturbüro-Inhaber im DACH-Raum',
+    variations: [
+      'die als Inhaber oder Gründer ihres eigenen Architekturbüros tätig sind',
+      'die sich auf Wohnungsbau oder Einfamilienhäuser spezialisiert haben',
+      'die sich auf Gewerbebau oder Bürogebäude spezialisiert haben',
+      'aus Berlin, München oder Hamburg',
+      'aus Frankfurt, Stuttgart oder Düsseldorf',
+      'aus Köln, Wien oder Zürich',
+      'die ein kleines Büro mit unter 15 Mitarbeitern führen',
+      'die sich auf nachhaltiges Bauen oder Innenarchitektur spezialisiert haben',
+      'die als freiberufliche Architekten arbeiten',
+      'die auf Sanierung, Umbau oder Denkmalschutz spezialisiert sind',
     ],
   },
   marketing_agenturen: {
@@ -229,6 +244,31 @@ function parseLeadsFromResponse(content: string): DiscoveredLead[] {
 }
 
 // ---------------------------------------------------------------------------
+// Fallback config for unknown verticals
+// ---------------------------------------------------------------------------
+
+function generateFallbackConfig(vertical: string): { base: string; variations: string[] } {
+  // Convert slug to readable name: "architekten" → "Architekten", "it_berater" → "It Berater"
+  const readableName = vertical
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+
+  return {
+    base: `selbstständige ${readableName} im DACH-Raum (Deutschland, Österreich, Schweiz)`,
+    variations: [
+      'die als Inhaber oder Gründer ihres eigenen Unternehmens tätig sind',
+      'die als Selbstständige oder Freiberufler arbeiten',
+      'aus Berlin, München oder Hamburg',
+      'aus Frankfurt, Stuttgart oder Düsseldorf',
+      'aus Köln, Wien oder Zürich',
+      'die ein kleines Team oder Büro führen',
+      'die auf LinkedIn aktiv sind und eine eigene Website haben',
+      'die sich auf spezielle Nischen in ihrem Bereich spezialisiert haben',
+    ],
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Main search function (async generator for streaming)
 // ---------------------------------------------------------------------------
 
@@ -241,12 +281,8 @@ export async function* searchLeadsPerplexity(
   | { type: 'batch_done'; batch: number; found: number }
   | { type: 'error'; error: string }
 > {
-  const config = VERTICAL_SEARCH_CONFIG[vertical]
-  if (!config) {
-    console.log(`[LeadSearch] Unknown vertical: ${vertical}. Available: ${Object.keys(VERTICAL_SEARCH_CONFIG).join(', ')}`)
-    yield { type: 'error', error: `Unbekanntes Vertical: ${vertical}. Verfügbar: ${Object.keys(VERTICAL_SEARCH_CONFIG).join(', ')}` }
-    return
-  }
+  // Use specific config if available, otherwise generate a generic one from the vertical slug
+  const config = VERTICAL_SEARCH_CONFIG[vertical] ?? generateFallbackConfig(vertical)
 
   console.log(`[LeadSearch] Starting search for vertical=${vertical}, maxLeads=${maxLeads}`)
   yield { type: 'start', vertical, max_leads: maxLeads }
