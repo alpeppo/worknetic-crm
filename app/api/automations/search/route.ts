@@ -88,8 +88,8 @@ export async function POST(request: NextRequest) {
             }
 
             // Insert into Supabase
-            // Note: 'leads' is a VIEW, so INSERT RETURNING doesn't work.
-            // We generate the ID upfront and insert without .select().
+            // Note: 'leads' is a VIEW — the JS client always adds RETURNING
+            // which views don't support. Use direct REST API with return=minimal.
             try {
               const leadId = crypto.randomUUID()
               const insertPayload = {
@@ -110,13 +110,24 @@ export async function POST(request: NextRequest) {
                 updated_at: new Date().toISOString(),
               }
               console.log(`[SearchAPI] Inserting lead: ${lead.name} (id=${leadId})`)
-              const { error: insertError } = await supabase
-                .from('leads')
-                .insert(insertPayload)
 
-              if (insertError) {
-                console.log(`[SearchAPI] Insert error for ${lead.name}:`, insertError.message)
-                throw insertError
+              const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+              const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+              const insertRes = await fetch(`${supabaseUrl}/rest/v1/leads`, {
+                method: 'POST',
+                headers: {
+                  'apikey': supabaseKey,
+                  'Authorization': `Bearer ${supabaseKey}`,
+                  'Content-Type': 'application/json',
+                  'Prefer': 'return=minimal',
+                },
+                body: JSON.stringify(insertPayload),
+              })
+
+              if (!insertRes.ok) {
+                const errBody = await insertRes.text()
+                console.log(`[SearchAPI] Insert error for ${lead.name}: ${insertRes.status} ${errBody}`)
+                throw new Error(`Insert failed: ${insertRes.status}`)
               }
 
               imported++
