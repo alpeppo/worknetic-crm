@@ -118,7 +118,7 @@ const AUTOMATIONS = [
   {
     id: 'search' as AutomationType,
     name: 'Leads suchen',
-    description: 'Neue Leads via Google finden — LinkedIn-Profile, Kontaktdaten, Website. Automatisch importieren + anreichern.',
+    description: 'Neue Leads via Perplexity Sonar finden — Name, Firma, Kontaktdaten, Website. Automatisch importieren + anreichern.',
     icon: Search,
     color: '#34C759',
     bgColor: 'rgba(52, 199, 89, 0.10)',
@@ -567,7 +567,7 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
                 color: 'var(--color-text-secondary)',
               }}
             >
-              Sucht via Google nach LinkedIn-Profilen im DACH-Raum, extrahiert Kontaktdaten von Firmenwebsites und importiert als neue Leads. Enrichment + E-Mail-Generierung starten automatisch.
+              Sucht via Perplexity Sonar nach Geschaeftspersonen im DACH-Raum — findet Name, Firma, Website, Kontaktdaten. Importiert als neue Leads. Enrichment + E-Mail-Generierung starten automatisch.
             </div>
           </div>
 
@@ -980,7 +980,7 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
                   <div style={{ display: 'flex', gap: '12px', marginTop: '2px' }}>
                     {result.website && (
                       <span style={{ fontSize: '11px', color: 'var(--color-text-tertiary)' }}>
-                        {new URL(result.website).hostname.replace('www.', '')}
+                        {(() => { try { return new URL(result.website!.startsWith('http') ? result.website! : `https://${result.website}`).hostname.replace('www.', '') } catch { return result.website } })()}
                       </span>
                     )}
                     {result.email && (
