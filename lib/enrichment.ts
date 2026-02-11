@@ -1,5 +1,6 @@
 import * as cheerio from 'cheerio'
 import { resolveMx } from 'dns/promises'
+import * as net from 'net'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -187,6 +188,275 @@ async function validateEmail(
   return { valid: !issues.includes('no_mx_record'), issues }
 }
 
+// ---------------------------------------------------------------------------
+// SMTP Email Pattern Guessing & Verification
+// ---------------------------------------------------------------------------
+
+const SMTP_TIMEOUT_MS = 10_000
+const SENDER_DOMAIN = 'worknetic.de'
+const SENDER_EMAIL = `verify@${SENDER_DOMAIN}`
+
+// Common German email patterns (ordered by likelihood for solopreneurs)
+const EMAIL_PATTERNS = [
+  '{f}@{d}',        // max@firma.de
+  '{f}.{l}@{d}',    // max.mustermann@firma.de
+  '{fi}.{l}@{d}',   // m.mustermann@firma.de
+  '{l}@{d}',        // mustermann@firma.de
+  '{f}{l}@{d}',     // maxmustermann@firma.de
+  '{fi}{l}@{d}',    // mmustermann@firma.de
+  '{f}-{l}@{d}',    // max-mustermann@firma.de
+  '{f}_{l}@{d}',    // max_mustermann@firma.de
+  '{l}.{f}@{d}',    // mustermann.max@firma.de
+]
+
+const GERMAN_CHAR_MAP: Record<string, string> = {
+  'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'ß': 'ss',
+}
+
+function normalizeGermanName(name: string): string {
+  let result = name.toLowerCase().trim()
+  for (const [char, replacement] of Object.entries(GERMAN_CHAR_MAP)) {
+    result = result.replaceAll(char, replacement)
+  }
+  // Remove remaining accents via NFD decomposition
+  result = result.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  return result
+}
+
+function extractFirstLast(fullName: string): { first: string | null; last: string | null } {
+  const titles = ['dr.', 'dr', 'prof.', 'prof', 'dipl.', 'dipl', 'ing.', 'ing', 'mag.', 'mag', 'mba', 'msc', 'bsc', 'ra']
+  let name = fullName.trim()
+  // Remove LinkedIn-style suffixes
+  name = name.split(/\s*[–—|•]\s*/)[0].trim()
+
+  let parts = name.split(/\s+/)
+  parts = parts.filter((p) => !titles.includes(p.toLowerCase().replace('.', '')))
+
+  if (parts.length < 2) return { first: parts[0] ? normalizeGermanName(parts[0]) : null, last: null }
+
+  const first = normalizeGermanName(parts[0])
+  let last = normalizeGermanName(parts[parts.length - 1])
+
+  // Handle noble prefixes (von, van, de, zu, vom)
+  const noblePrefixes = ['von', 'van', 'de', 'zu', 'vom']
+  if (parts.length >= 3 && noblePrefixes.includes(parts[parts.length - 2].toLowerCase())) {
+    last = normalizeGermanName(parts[parts.length - 2]) + normalizeGermanName(parts[parts.length - 1])
+  }
+
+  return { first, last }
+}
+
+function generateEmailCandidates(first: string, last: string, domain: string): string[] {
+  if (!first || !last || !domain) return []
+  const fi = first[0]
+  return EMAIL_PATTERNS.map((pattern) =>
+    pattern
+      .replace('{f}', first)
+      .replace('{l}', last)
+      .replace('{fi}', fi)
+      .replace('{d}', domain),
+  )
+}
+
+/** Low-level SMTP communication: send a command, read response */
+function smtpCommand(
+  socket: net.Socket,
+  command: string | null,
+  timeoutMs: number = SMTP_TIMEOUT_MS,
+): Promise<{ code: number; message: string }> {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error('SMTP timeout'))
+    }, timeoutMs)
+
+    const onData = (data: Buffer) => {
+      clearTimeout(timeout)
+      socket.removeListener('data', onData)
+      socket.removeListener('error', onError)
+      const response = data.toString()
+      const code = parseInt(response.substring(0, 3), 10)
+      resolve({ code, message: response })
+    }
+
+    const onError = (err: Error) => {
+      clearTimeout(timeout)
+      socket.removeListener('data', onData)
+      reject(err)
+    }
+
+    socket.on('data', onData)
+    socket.on('error', onError)
+
+    if (command !== null) {
+      socket.write(command + '\r\n')
+    }
+  })
+}
+
+interface SmtpGuessResult {
+  verified_email: string | null
+  catch_all: boolean
+  patterns_tried: number
+  error?: string
+}
+
+async function getMxHost(domain: string): Promise<string | null> {
+  try {
+    const records = await resolveMx(domain)
+    if (records.length === 0) return null
+    records.sort((a, b) => a.priority - b.priority)
+    return records[0].exchange
+  } catch {
+    return null
+  }
+}
+
+async function guessEmailSmtp(
+  fullName: string,
+  domain: string,
+  maxChecks: number = 5,
+): Promise<SmtpGuessResult> {
+  const result: SmtpGuessResult = {
+    verified_email: null,
+    catch_all: false,
+    patterns_tried: 0,
+  }
+
+  const { first, last } = extractFirstLast(fullName)
+  if (!first || !last) return result
+
+  const mxHost = await getMxHost(domain)
+  if (!mxHost) {
+    result.error = 'no_mx_record'
+    return result
+  }
+
+  const candidates = generateEmailCandidates(first, last, domain)
+  if (candidates.length === 0) return result
+
+  // Connect to SMTP server
+  const socket = new net.Socket()
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('connect_timeout')), SMTP_TIMEOUT_MS)
+      socket.connect(25, mxHost, () => {
+        clearTimeout(timeout)
+        resolve()
+      })
+      socket.on('error', (err) => {
+        clearTimeout(timeout)
+        reject(err)
+      })
+    })
+
+    // Read server greeting
+    await smtpCommand(socket, null)
+
+    // EHLO
+    await smtpCommand(socket, `EHLO ${SENDER_DOMAIN}`)
+
+    // MAIL FROM
+    const mailFrom = await smtpCommand(socket, `MAIL FROM:<${SENDER_EMAIL}>`)
+    if (mailFrom.code !== 250) {
+      result.error = `mail_from_rejected_${mailFrom.code}`
+      socket.destroy()
+      return result
+    }
+
+    // Catch-all check: try a fake address
+    const fakeCheck = await smtpCommand(socket, `RCPT TO:<xyznonexistent99test@${domain}>`)
+    if (fakeCheck.code === 250) {
+      result.catch_all = true
+      result.verified_email = candidates[0]
+      socket.write('QUIT\r\n')
+      socket.destroy()
+      return result
+    }
+
+    // Reset for real checks
+    await smtpCommand(socket, 'RSET')
+    await smtpCommand(socket, `MAIL FROM:<${SENDER_EMAIL}>`)
+
+    // Check each candidate
+    for (const email of candidates.slice(0, maxChecks)) {
+      result.patterns_tried++
+      const rcpt = await smtpCommand(socket, `RCPT TO:<${email}>`)
+
+      if (rcpt.code === 250) {
+        result.verified_email = email
+        break
+      } else if ([450, 451, 452].includes(rcpt.code)) {
+        result.error = 'greylisted'
+        break
+      }
+
+      // Reset for next check
+      await smtpCommand(socket, 'RSET')
+      await smtpCommand(socket, `MAIL FROM:<${SENDER_EMAIL}>`)
+    }
+
+    socket.write('QUIT\r\n')
+    socket.destroy()
+  } catch (err) {
+    result.error = err instanceof Error ? err.message.slice(0, 100) : 'unknown_error'
+    socket.destroy()
+  }
+
+  return result
+}
+
+// ---------------------------------------------------------------------------
+// Name-near-email Impressum matching
+// ---------------------------------------------------------------------------
+
+function findNameNearEmail(html: string, leadName: string, websiteDomain?: string): string | null {
+  if (!html || !leadName) return null
+
+  const $ = cheerio.load(html)
+  $('script, style').remove()
+  const text = $.text()
+  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean)
+
+  const parts = leadName.trim().split(/\s+/)
+  if (parts.length < 2) return null
+
+  const first = parts[0].toLowerCase()
+  const last = parts[parts.length - 1].toLowerCase()
+  const firstNorm = normalizeGermanName(parts[0])
+  const lastNorm = normalizeGermanName(parts[parts.length - 1])
+
+  // Find lines containing the lead's name
+  const nameLineIndices: number[] = []
+  for (let i = 0; i < lines.length; i++) {
+    const lower = lines[i].toLowerCase()
+    if ((lower.includes(first) && lower.includes(last)) ||
+        (lower.includes(firstNorm) && lower.includes(lastNorm))) {
+      nameLineIndices.push(i)
+    }
+  }
+
+  if (nameLineIndices.length === 0) return null
+
+  // Search for emails within ±5 lines of where the name appears
+  const PROXIMITY = 5
+  for (const idx of nameLineIndices) {
+    const start = Math.max(0, idx - PROXIMITY)
+    const end = Math.min(lines.length, idx + PROXIMITY + 1)
+    const nearbyText = lines.slice(start, end).join(' ')
+
+    const emails = nearbyText.match(EMAIL_REGEX) ?? []
+    for (const email of emails) {
+      const lower = email.toLowerCase()
+      if (isGenericEmail(lower)) continue
+      if (websiteDomain && lower.split('@')[1] === websiteDomain) return lower
+      return lower
+    }
+  }
+
+  return null
+}
+
 async function fetchPage(url: string): Promise<string | null> {
   try {
     const controller = new AbortController()
@@ -268,11 +538,18 @@ function extractDescription(html: string): string | null {
   return null
 }
 
-async function scrapeWebsite(websiteUrl: string): Promise<ScrapedData> {
+async function scrapeWebsite(websiteUrl: string, leadName?: string): Promise<ScrapedData & { nameMatchedEmail?: string }> {
   const baseUrl = normalizeUrl(websiteUrl)
   const allEmails: string[] = []
   const allPhones: string[] = []
   let description: string | null = null
+  let nameMatchedEmail: string | undefined
+
+  // Extract website domain for matching
+  let websiteDomain: string | undefined
+  try {
+    websiteDomain = new URL(baseUrl).hostname.replace(/^www\./, '')
+  } catch { /* ignore */ }
 
   for (let i = 0; i < CONTACT_PATHS.length; i++) {
     const path = CONTACT_PATHS[i]
@@ -284,6 +561,11 @@ async function scrapeWebsite(websiteUrl: string): Promise<ScrapedData> {
 
     const html = await fetchPage(url)
     if (!html) continue
+
+    // Try name-near-email matching on raw HTML
+    if (leadName && !nameMatchedEmail) {
+      nameMatchedEmail = findNameNearEmail(html, leadName, websiteDomain) ?? undefined
+    }
 
     const { emails, phones } = extractFromHtml(html)
     allEmails.push(...emails)
@@ -299,6 +581,7 @@ async function scrapeWebsite(websiteUrl: string): Promise<ScrapedData> {
     emails: dedupe(allEmails),
     phones: dedupe(allPhones),
     description,
+    nameMatchedEmail,
   }
 }
 
@@ -499,11 +782,14 @@ export async function enrichLead(lead: {
     let perplexityData: PerplexityData | null = null
 
     // ------------------------------------------------------------------
-    // Step 1: Scrape website if available
+    // Step 1: Scrape website if available (with name-near-email matching)
     // ------------------------------------------------------------------
+    let nameMatchedEmail: string | undefined
     if (lead.website) {
       try {
-        scraped = await scrapeWebsite(lead.website)
+        const scrapeResult = await scrapeWebsite(lead.website, lead.name)
+        nameMatchedEmail = scrapeResult.nameMatchedEmail
+        scraped = scrapeResult
       } catch (err) {
         console.error('Website scraping failed:', err)
       }
@@ -573,10 +859,16 @@ export async function enrichLead(lead: {
     }
     result.all_phones_found = allPhones.filter((p) => p.value.length >= 8)
 
-    // Pick the best email (prefer existing > website > ai, personal over generic)
+    // Pick the best email (prefer name-matched > existing > website > ai, personal over generic)
     if (!result.email) {
-      const emailValues = result.all_emails_found.map((e) => e.value)
-      result.email = pickBestEmail(emailValues)
+      if (nameMatchedEmail) {
+        // Name-matched email is highest priority — found near the lead's name on their website
+        result.email = nameMatchedEmail
+        console.log(`Using name-matched email: ${nameMatchedEmail}`)
+      } else {
+        const emailValues = result.all_emails_found.map((e) => e.value)
+        result.email = pickBestEmail(emailValues)
+      }
     }
 
     // Validate chosen email (MX check, domain match)
@@ -591,6 +883,45 @@ export async function enrichLead(lead: {
       } else if (validation.issues.includes('generic_prefix')) {
         console.log(`Generic email removed: ${result.email}`)
         result.email = null
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // Step 2.5: SMTP Email Pattern Guessing (if still no email)
+    // ------------------------------------------------------------------
+    if (!result.email && lead.name) {
+      const websiteUrl = result.website ?? lead.website
+      if (websiteUrl) {
+        try {
+          let emailDomain: string | undefined
+          try {
+            const url = websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`
+            emailDomain = new URL(url).hostname.replace(/^www\./, '')
+          } catch { /* ignore */ }
+
+          if (emailDomain) {
+            console.log(`SMTP pattern guessing: ${lead.name} @ ${emailDomain}`)
+            const smtpResult = await guessEmailSmtp(lead.name, emailDomain, 5)
+
+            if (smtpResult.verified_email) {
+              if (smtpResult.catch_all) {
+                console.log(`Catch-all domain — using best guess: ${smtpResult.verified_email}`)
+              } else {
+                console.log(`SMTP verified email: ${smtpResult.verified_email}`)
+              }
+              result.email = smtpResult.verified_email
+              // Add to all_emails_found
+              result.all_emails_found.push({
+                value: smtpResult.verified_email,
+                source: 'website', // closest match since it's based on the website domain
+              })
+            } else {
+              console.log(`No email found via SMTP after ${smtpResult.patterns_tried} attempts${smtpResult.error ? ` (${smtpResult.error})` : ''}`)
+            }
+          }
+        } catch (err) {
+          console.error('SMTP guess failed:', err)
+        }
       }
     }
 
