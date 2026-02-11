@@ -1,4 +1,5 @@
 import * as cheerio from 'cheerio'
+import { resolveMx } from 'dns/promises'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -108,9 +109,11 @@ function isGenericEmail(email: string): boolean {
 
 function pickBestEmail(emails: string[]): string | null {
   if (emails.length === 0) return null
+  // Only return personal emails — generic emails are useless for cold outreach
   const personal = emails.filter((e) => !isGenericEmail(e))
   if (personal.length > 0) return personal[0]
-  return emails[0]
+  // Do NOT fall back to generic emails
+  return null
 }
 
 function pickBestPhone(phones: string[]): string | null {
@@ -124,6 +127,64 @@ function pickBestPhone(phones: string[]): string | null {
 
 function dedupe(arr: string[]): string[] {
   return [...new Set(arr)]
+}
+
+async function checkMxRecord(domain: string): Promise<boolean> {
+  try {
+    const records = await resolveMx(domain)
+    return records.length > 0
+  } catch {
+    // If DNS lookup fails, assume valid to avoid false negatives
+    return true
+  }
+}
+
+async function validateEmail(
+  email: string,
+  websiteUrl?: string | null,
+): Promise<{ valid: boolean; issues: string[] }> {
+  const issues: string[] = []
+  const lower = email.toLowerCase()
+
+  if (!lower.includes('@')) {
+    return { valid: false, issues: ['invalid_format'] }
+  }
+
+  const emailDomain = lower.split('@')[1]
+
+  // Check generic prefix
+  if (isGenericEmail(lower)) {
+    issues.push('generic_prefix')
+  }
+
+  // MX record check
+  const hasMx = await checkMxRecord(emailDomain)
+  if (!hasMx) {
+    issues.push('no_mx_record')
+    return { valid: false, issues }
+  }
+
+  // Domain mismatch with website
+  if (websiteUrl) {
+    try {
+      const url = websiteUrl.startsWith('http')
+        ? websiteUrl
+        : `https://${websiteUrl}`
+      const parsed = new URL(url)
+      const websiteDomain = parsed.hostname.replace(/^www\./, '')
+      if (
+        emailDomain !== websiteDomain &&
+        !emailDomain.endsWith('.' + websiteDomain) &&
+        !websiteDomain.endsWith('.' + emailDomain)
+      ) {
+        issues.push('domain_mismatch')
+      }
+    } catch {
+      // URL parsing failed, skip domain check
+    }
+  }
+
+  return { valid: !issues.includes('no_mx_record'), issues }
 }
 
 async function fetchPage(url: string): Promise<string | null> {
@@ -516,6 +577,21 @@ export async function enrichLead(lead: {
     if (!result.email) {
       const emailValues = result.all_emails_found.map((e) => e.value)
       result.email = pickBestEmail(emailValues)
+    }
+
+    // Validate chosen email (MX check, domain match)
+    if (result.email) {
+      const websiteForValidation = result.website ?? lead.website ?? null
+      const validation = await validateEmail(result.email, websiteForValidation)
+      if (!validation.valid) {
+        console.log(
+          `Email removed (${validation.issues.join(', ')}): ${result.email}`,
+        )
+        result.email = null
+      } else if (validation.issues.includes('generic_prefix')) {
+        console.log(`Generic email removed: ${result.email}`)
+        result.email = null
+      }
     }
 
     // Pick the best phone (prefer existing > website > ai)
