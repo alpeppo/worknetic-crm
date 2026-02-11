@@ -88,8 +88,12 @@ export async function POST(request: NextRequest) {
             }
 
             // Insert into Supabase
+            // Note: 'leads' is a VIEW, so INSERT RETURNING doesn't work.
+            // We generate the ID upfront and insert without .select().
             try {
+              const leadId = crypto.randomUUID()
               const insertPayload = {
+                id: leadId,
                 name: lead.name,
                 company: lead.company,
                 linkedin_url: lead.linkedin_url,
@@ -105,19 +109,18 @@ export async function POST(request: NextRequest) {
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
               }
-              console.log(`[SearchAPI] Inserting lead: ${lead.name}`)
-              const { data: newLead, error: insertError } = await supabase
+              console.log(`[SearchAPI] Inserting lead: ${lead.name} (id=${leadId})`)
+              const { error: insertError } = await supabase
                 .from('leads')
                 .insert(insertPayload)
-                .select('id')
-                .single()
 
               if (insertError) {
-                console.log(`[SearchAPI] Insert error for ${lead.name}:`, insertError.message, insertError.details, insertError.hint)
+                console.log(`[SearchAPI] Insert error for ${lead.name}:`, insertError.message)
                 throw insertError
               }
 
               imported++
+              console.log(`[SearchAPI] Inserted ${lead.name} successfully`)
 
               // Add to dedup sets
               if (lead.linkedin_url) existingUrls.add(lead.linkedin_url.toLowerCase())
@@ -136,11 +139,9 @@ export async function POST(request: NextRequest) {
               })
 
               // Fire-and-forget: enrichment + email generation
-              if (newLead?.id) {
-                runEnrichmentForLead(newLead.id, lead, vertical).catch((err) =>
-                  console.error(`Enrichment error for ${lead.name}:`, err),
-                )
-              }
+              runEnrichmentForLead(leadId, lead, vertical).catch((err) =>
+                console.error(`Enrichment error for ${lead.name}:`, err),
+              )
             } catch (err) {
               errors++
               const errMsg = err instanceof Error ? err.message : 'Insert fehlgeschlagen'
