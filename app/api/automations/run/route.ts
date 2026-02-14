@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     })
   }
 
-  if (!['enrichment', 'email', 'pipeline'].includes(automation)) {
+  if (automation !== 'email') {
     return new Response(JSON.stringify({ error: 'Invalid automation type' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
@@ -41,12 +41,28 @@ export async function POST(request: NextRequest) {
 
       for (const lead of leads) {
         try {
-          let enrichmentResult = null
-          let emailResult = null
+          // Step 1: Check for existing enrichment data, or run enrichment first
+          let enrichmentData = {
+            company_description: null as string | null,
+            business_processes: null as string | null,
+          }
 
-          // Step 1: Enrichment (for 'enrichment' and 'pipeline')
-          if (automation === 'enrichment' || automation === 'pipeline') {
-            enrichmentResult = await enrichLead({
+          const { data: existing } = await supabase
+            .from('activities')
+            .select('metadata')
+            .eq('lead_id', lead.id)
+            .eq('type', 'enrichment')
+            .order('created_at', { ascending: false })
+            .limit(1)
+
+          if (existing?.[0]?.metadata?.enrichment) {
+            enrichmentData = {
+              company_description: existing[0].metadata.enrichment.company_description,
+              business_processes: existing[0].metadata.enrichment.business_processes,
+            }
+          } else {
+            // No enrichment yet — run it first for better email quality
+            const enrichmentResult = await enrichLead({
               name: lead.name,
               company: lead.company,
               website: lead.website,
@@ -56,7 +72,7 @@ export async function POST(request: NextRequest) {
               headline: lead.headline,
             })
 
-            // Update lead fields (only if currently empty)
+            // Update lead fields
             const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
             if (enrichmentResult.email && !lead.email) updates.email = enrichmentResult.email
             if (enrichmentResult.phone && !lead.phone) updates.phone = enrichmentResult.phone
@@ -65,65 +81,44 @@ export async function POST(request: NextRequest) {
               await supabase.from('leads').update(updates).eq('id', lead.id)
             }
 
-            // Store enrichment activity
-            await supabase.from('activities').insert({
-              lead_id: lead.id,
-              type: 'enrichment',
-              subject: `Lead angereichert (${enrichmentResult.status})`,
-              body: enrichmentResult.company_description || null,
-              metadata: { enrichment: enrichmentResult },
-              created_by: 'system',
-              created_at: new Date().toISOString(),
+            // Store enrichment activity via RPC (bypass VIEW INSERT RETURNING issue)
+            await supabase.rpc('insert_activity', {
+              p_lead_id: lead.id,
+              p_type: 'enrichment',
+              p_subject: `Lead angereichert (${enrichmentResult.status})`,
+              p_body: enrichmentResult.company_description || null,
+              p_metadata: { enrichment: enrichmentResult },
+              p_created_by: 'system',
             })
+
+            enrichmentData = {
+              company_description: enrichmentResult.company_description,
+              business_processes: enrichmentResult.business_processes,
+            }
           }
 
-          // Step 2: Email generation (for 'email' and 'pipeline')
-          if (automation === 'email' || automation === 'pipeline') {
-            // For email-only, fetch existing enrichment data
-            let enrichmentData = {
-              company_description: enrichmentResult?.company_description ?? null,
-              business_processes: enrichmentResult?.business_processes ?? null,
-            }
+          // Step 2: Generate personalized email
+          const emailResult = await generateOutreachEmail({
+            lead: {
+              name: lead.name,
+              company: lead.company,
+              headline: lead.headline,
+              vertical: lead.vertical,
+              website: lead.website,
+              location: lead.location,
+            },
+            enrichment: enrichmentData,
+          })
 
-            if (!enrichmentResult) {
-              const { data: existing } = await supabase
-                .from('activities')
-                .select('metadata')
-                .eq('lead_id', lead.id)
-                .eq('type', 'enrichment')
-                .order('created_at', { ascending: false })
-                .limit(1)
-              if (existing?.[0]?.metadata?.enrichment) {
-                enrichmentData = {
-                  company_description: existing[0].metadata.enrichment.company_description,
-                  business_processes: existing[0].metadata.enrichment.business_processes,
-                }
-              }
-            }
-
-            emailResult = await generateOutreachEmail({
-              lead: {
-                name: lead.name,
-                company: lead.company,
-                headline: lead.headline,
-                vertical: lead.vertical,
-                website: lead.website || enrichmentResult?.website,
-                location: lead.location,
-              },
-              enrichment: enrichmentData,
-            })
-
-            // Store email draft activity
-            await supabase.from('activities').insert({
-              lead_id: lead.id,
-              type: 'email_draft',
-              subject: emailResult.subject,
-              body: emailResult.body,
-              metadata: { email_draft: emailResult },
-              created_by: 'system',
-              created_at: new Date().toISOString(),
-            })
-          }
+          // Store email draft activity via RPC (bypass VIEW INSERT RETURNING issue)
+          await supabase.rpc('insert_activity', {
+            p_lead_id: lead.id,
+            p_type: 'email_draft',
+            p_subject: emailResult.subject,
+            p_body: emailResult.body,
+            p_metadata: { email_draft: emailResult },
+            p_created_by: 'system',
+          })
 
           // Stream success event
           controller.enqueue(
@@ -132,13 +127,11 @@ export async function POST(request: NextRequest) {
                 leadId: lead.id,
                 leadName: lead.name,
                 success: true,
-                enrichmentStatus: enrichmentResult?.status,
-                emailGenerated: !!emailResult,
+                emailGenerated: true,
               }) + '\n'
             )
           )
         } catch (err) {
-          // Stream error event (continue processing other leads)
           controller.enqueue(
             encoder.encode(
               JSON.stringify({

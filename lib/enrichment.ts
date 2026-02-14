@@ -314,7 +314,7 @@ async function getMxHost(domain: string): Promise<string | null> {
 async function guessEmailSmtp(
   fullName: string,
   domain: string,
-  maxChecks: number = 5,
+  maxChecks: number = 9,
 ): Promise<SmtpGuessResult> {
   const result: SmtpGuessResult = {
     verified_email: null,
@@ -796,7 +796,70 @@ export async function enrichLead(lead: {
     }
 
     // ------------------------------------------------------------------
-    // Step 2: Call Perplexity Sonar API
+    // Step 2: Check if we already have a personal email from scraping
+    // ------------------------------------------------------------------
+    let personalEmailFromScrape: string | null = null
+    if (nameMatchedEmail) {
+      personalEmailFromScrape = nameMatchedEmail
+      console.log(`[Enrichment] Personal email found via name-matching: ${nameMatchedEmail}`)
+    } else if (scraped?.emails) {
+      const personal = scraped.emails.filter((e) => !isGenericEmail(e))
+      if (personal.length > 0) {
+        personalEmailFromScrape = personal[0]
+        console.log(`[Enrichment] Personal email found on website: ${personalEmailFromScrape}`)
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // Step 3: SMTP Email Guessing — only if NO personal email from scraping
+    // ------------------------------------------------------------------
+    let smtpEmail: string | null = null
+    if (!personalEmailFromScrape && lead.name) {
+      const websiteUrl = lead.website ?? result.website
+      if (websiteUrl) {
+        try {
+          let emailDomain: string | undefined
+          try {
+            const url = websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`
+            emailDomain = new URL(url).hostname.replace(/^www\./, '')
+          } catch { /* ignore */ }
+
+          if (emailDomain) {
+            console.log(`[Enrichment] No personal email scraped — running SMTP guesser: ${lead.name} @ ${emailDomain}`)
+            const smtpResult = await guessEmailSmtp(lead.name, emailDomain)
+
+            if (smtpResult.verified_email) {
+              if (smtpResult.catch_all) {
+                console.log(`[Enrichment] Catch-all domain — using best guess: ${smtpResult.verified_email}`)
+              } else {
+                console.log(`[Enrichment] SMTP VERIFIED email: ${smtpResult.verified_email}`)
+              }
+              smtpEmail = smtpResult.verified_email
+            } else {
+              console.log(`[Enrichment] SMTP: no email after ${smtpResult.patterns_tried} attempts${smtpResult.error ? ` (${smtpResult.error})` : ''}`)
+
+              // Fallback: if SMTP port blocked, use best-guess with MX validation
+              if (smtpResult.error && ['connect_timeout', 'ECONNREFUSED', 'EHOSTUNREACH', 'ETIMEDOUT'].some(e => smtpResult.error?.includes(e))) {
+                const hasMx = await checkMxRecord(emailDomain)
+                if (hasMx) {
+                  const { first, last } = extractFirstLast(lead.name)
+                  if (first && last) {
+                    const bestGuess = `${first}.${last}@${emailDomain}`
+                    console.log(`[Enrichment] SMTP blocked — MX-validated best guess: ${bestGuess}`)
+                    smtpEmail = bestGuess
+                  }
+                }
+              }
+            }
+          }
+        } catch (err) {
+          console.error('[Enrichment] SMTP guess failed:', err)
+        }
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // Step 4: Call Perplexity Sonar API
     // ------------------------------------------------------------------
     try {
       perplexityData = await callPerplexity(lead)
@@ -805,16 +868,23 @@ export async function enrichLead(lead: {
     }
 
     // ------------------------------------------------------------------
-    // Step 3: Combine results
+    // Step 4: Combine results
     // ------------------------------------------------------------------
 
     // Collect all emails with source tagging
     const allEmails: FoundContact[] = []
     const seenEmails = new Set<string>()
+    // SMTP-verified email gets added first (highest priority)
+    if (smtpEmail) {
+      allEmails.push({ value: smtpEmail, source: 'website' })
+      seenEmails.add(smtpEmail)
+    }
     if (lead.email) {
       const val = lead.email.toLowerCase()
-      allEmails.push({ value: val, source: 'existing' })
-      seenEmails.add(val)
+      if (!seenEmails.has(val)) {
+        allEmails.push({ value: val, source: 'existing' })
+        seenEmails.add(val)
+      }
     }
     if (scraped?.emails) {
       for (const e of scraped.emails) {
@@ -859,70 +929,44 @@ export async function enrichLead(lead: {
     }
     result.all_phones_found = allPhones.filter((p) => p.value.length >= 8)
 
-    // Pick the best email (prefer name-matched > existing > website > ai, personal over generic)
+    // Pick the best email:
+    // Priority: 1) Personal email from website  2) SMTP-verified  3) AI-found personal
     if (!result.email) {
-      if (nameMatchedEmail) {
-        // Name-matched email is highest priority — found near the lead's name on their website
-        result.email = nameMatchedEmail
-        console.log(`Using name-matched email: ${nameMatchedEmail}`)
+      if (personalEmailFromScrape) {
+        // Personal email scraped from website — highest priority
+        result.email = personalEmailFromScrape
+        console.log(`[Enrichment] Using scraped personal email: ${personalEmailFromScrape}`)
+      } else if (smtpEmail) {
+        // SMTP-verified or MX-validated guess
+        result.email = smtpEmail
+        console.log(`[Enrichment] Using SMTP email: ${smtpEmail}`)
       } else {
+        // Fall back to AI-found or other emails (only personal, no generic)
         const emailValues = result.all_emails_found.map((e) => e.value)
         result.email = pickBestEmail(emailValues)
+        if (result.email) {
+          console.log(`[Enrichment] Using fallback email: ${result.email}`)
+        }
       }
     }
 
-    // Validate chosen email (MX check, domain match)
-    if (result.email) {
+    // Validate chosen email (MX check, domain match) — skip for SMTP-verified
+    if (result.email && result.email !== smtpEmail) {
       const websiteForValidation = result.website ?? lead.website ?? null
       const validation = await validateEmail(result.email, websiteForValidation)
       if (!validation.valid) {
-        console.log(
-          `Email removed (${validation.issues.join(', ')}): ${result.email}`,
-        )
+        console.log(`[Enrichment] Email removed (${validation.issues.join(', ')}): ${result.email}`)
         result.email = null
       } else if (validation.issues.includes('generic_prefix')) {
-        console.log(`Generic email removed: ${result.email}`)
+        console.log(`[Enrichment] Generic email removed: ${result.email}`)
         result.email = null
       }
     }
 
-    // ------------------------------------------------------------------
-    // Step 2.5: SMTP Email Pattern Guessing (if still no email)
-    // ------------------------------------------------------------------
-    if (!result.email && lead.name) {
-      const websiteUrl = result.website ?? lead.website
-      if (websiteUrl) {
-        try {
-          let emailDomain: string | undefined
-          try {
-            const url = websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`
-            emailDomain = new URL(url).hostname.replace(/^www\./, '')
-          } catch { /* ignore */ }
-
-          if (emailDomain) {
-            console.log(`SMTP pattern guessing: ${lead.name} @ ${emailDomain}`)
-            const smtpResult = await guessEmailSmtp(lead.name, emailDomain, 5)
-
-            if (smtpResult.verified_email) {
-              if (smtpResult.catch_all) {
-                console.log(`Catch-all domain — using best guess: ${smtpResult.verified_email}`)
-              } else {
-                console.log(`SMTP verified email: ${smtpResult.verified_email}`)
-              }
-              result.email = smtpResult.verified_email
-              // Add to all_emails_found
-              result.all_emails_found.push({
-                value: smtpResult.verified_email,
-                source: 'website', // closest match since it's based on the website domain
-              })
-            } else {
-              console.log(`No email found via SMTP after ${smtpResult.patterns_tried} attempts${smtpResult.error ? ` (${smtpResult.error})` : ''}`)
-            }
-          }
-        } catch (err) {
-          console.error('SMTP guess failed:', err)
-        }
-      }
+    // If validation killed the email, fall back to SMTP
+    if (!result.email && smtpEmail) {
+      result.email = smtpEmail
+      console.log(`[Enrichment] Falling back to SMTP email: ${smtpEmail}`)
     }
 
     // Pick the best phone (prefer existing > website > ai)

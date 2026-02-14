@@ -41,12 +41,19 @@ export async function POST(request: NextRequest) {
       let duplicates = 0
       let errors = 0
       let total = 0
+      let enriched = 0
+      const importedLeads: { id: string; lead: { name: string; company: string | null; website: string | null; email: string | null; phone: string | null; linkedin_url: string | null; headline: string | null } }[] = []
 
       function send(event: Record<string, unknown>) {
-        controller.enqueue(encoder.encode(JSON.stringify(event) + '\n'))
+        try {
+          controller.enqueue(encoder.encode(JSON.stringify(event) + '\n'))
+        } catch {
+          // Controller might be closed if client disconnected
+        }
       }
 
       try {
+        // ========== PHASE 1: Search & Import ==========
         for await (const event of searchLeadsPerplexity(vertical, maxLeads)) {
           if (event.type === 'start') {
             send({ type: 'start', vertical: event.vertical, max_leads: event.max_leads })
@@ -87,47 +94,30 @@ export async function POST(request: NextRequest) {
               continue
             }
 
-            // Insert into Supabase
-            // Note: 'leads' is a VIEW — the JS client always adds RETURNING
-            // which views don't support. Use direct REST API with return=minimal.
+            // Insert into Supabase via RPC (bypasses the VIEW RETURNING issue)
             try {
               const leadId = crypto.randomUUID()
-              const insertPayload = {
-                id: leadId,
-                name: lead.name,
-                company: lead.company,
-                linkedin_url: lead.linkedin_url,
-                website: lead.website,
-                email: lead.email,
-                phone: lead.phone,
-                headline: lead.headline,
-                vertical,
-                source: 'perplexity_search',
-                stage: 'new',
-                created_by: 'system',
-                updated_by: 'system',
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              }
-              console.log(`[SearchAPI] Inserting lead: ${lead.name} (id=${leadId})`)
+              console.log(`[SearchAPI] Inserting lead via RPC: ${lead.name} (id=${leadId})`)
 
-              const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-              const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-              const insertRes = await fetch(`${supabaseUrl}/rest/v1/leads`, {
-                method: 'POST',
-                headers: {
-                  'apikey': supabaseKey,
-                  'Authorization': `Bearer ${supabaseKey}`,
-                  'Content-Type': 'application/json',
-                  'Prefer': 'return=minimal',
-                },
-                body: JSON.stringify(insertPayload),
+              const { error: insertError } = await supabase.rpc('insert_lead', {
+                p_id: leadId,
+                p_name: lead.name,
+                p_company: lead.company,
+                p_linkedin_url: lead.linkedin_url,
+                p_website: lead.website,
+                p_email: lead.email,
+                p_phone: lead.phone,
+                p_headline: lead.headline,
+                p_vertical: vertical,
+                p_source: 'perplexity_search',
+                p_stage: 'new',
+                p_created_by: 'system',
+                p_updated_by: 'system',
               })
 
-              if (!insertRes.ok) {
-                const errBody = await insertRes.text()
-                console.log(`[SearchAPI] Insert error for ${lead.name}: ${insertRes.status} ${errBody}`)
-                throw new Error(`Insert failed: ${insertRes.status}`)
+              if (insertError) {
+                console.log(`[SearchAPI] Insert error for ${lead.name}:`, insertError.message)
+                throw new Error(`Insert failed: ${insertError.message}`)
               }
 
               imported++
@@ -137,8 +127,12 @@ export async function POST(request: NextRequest) {
               if (lead.linkedin_url) existingUrls.add(lead.linkedin_url.toLowerCase())
               existingNameCompany.add(nameKey)
 
+              // Collect for enrichment phase
+              importedLeads.push({ id: leadId, lead })
+
               send({
                 type: 'profile',
+                lead_id: leadId,
                 name: lead.name,
                 company: lead.company,
                 linkedin_url: lead.linkedin_url,
@@ -148,11 +142,6 @@ export async function POST(request: NextRequest) {
                 imported: true,
                 duplicate: false,
               })
-
-              // Fire-and-forget: enrichment + email generation
-              runEnrichmentForLead(leadId, lead, vertical).catch((err) =>
-                console.error(`Enrichment error for ${lead.name}:`, err),
-              )
             } catch (err) {
               errors++
               const errMsg = err instanceof Error ? err.message : 'Insert fehlgeschlagen'
@@ -174,6 +163,94 @@ export async function POST(request: NextRequest) {
         send({ type: 'error', error: err instanceof Error ? err.message : 'Pipeline-Fehler' })
       }
 
+      // ========== PHASE 2: Enrichment (inline, not fire-and-forget) ==========
+      if (importedLeads.length > 0) {
+        send({ type: 'enrichment_start', count: importedLeads.length })
+        console.log(`[SearchAPI] Starting enrichment for ${importedLeads.length} leads`)
+
+        for (const { id: leadId, lead } of importedLeads) {
+          try {
+            console.log(`[SearchAPI] Enriching ${lead.name}...`)
+            send({ type: 'enrichment_progress', name: lead.name, status: 'running' })
+
+            // Step 1: Enrich
+            const enrichmentResult = await enrichLead({
+              name: lead.name,
+              company: lead.company,
+              website: lead.website,
+              email: lead.email,
+              phone: lead.phone,
+              linkedin_url: lead.linkedin_url,
+              headline: lead.headline,
+            })
+
+            // Step 2: Update lead fields (only if currently empty)
+            const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
+            if (enrichmentResult.email && !lead.email) updates.email = enrichmentResult.email
+            if (enrichmentResult.phone && !lead.phone) updates.phone = enrichmentResult.phone
+            if (enrichmentResult.website && !lead.website) updates.website = enrichmentResult.website
+            if (Object.keys(updates).length > 1) {
+              await supabase.from('leads').update(updates).eq('id', leadId)
+            }
+
+            // Step 3: Store enrichment activity via RPC (bypass VIEW INSERT RETURNING issue)
+            await supabase.rpc('insert_activity', {
+              p_lead_id: leadId,
+              p_type: 'enrichment',
+              p_subject: `Lead angereichert (${enrichmentResult.status})`,
+              p_body: enrichmentResult.company_description || null,
+              p_metadata: { enrichment: enrichmentResult },
+              p_created_by: 'system',
+            })
+
+            // Step 4: Generate email
+            const email = await generateOutreachEmail({
+              lead: {
+                name: lead.name,
+                company: lead.company,
+                headline: lead.headline,
+                vertical,
+                website: lead.website || enrichmentResult.website,
+              },
+              enrichment: {
+                company_description: enrichmentResult.company_description,
+                business_processes: enrichmentResult.business_processes,
+              },
+            })
+
+            // Step 5: Store email draft via RPC (bypass VIEW INSERT RETURNING issue)
+            await supabase.rpc('insert_activity', {
+              p_lead_id: leadId,
+              p_type: 'email_draft',
+              p_subject: email.subject,
+              p_body: email.body,
+              p_metadata: { email_draft: email },
+              p_created_by: 'system',
+            })
+
+            enriched++
+            console.log(`[SearchAPI] Enriched ${lead.name} successfully (${enrichmentResult.status})`)
+            send({
+              type: 'enrichment_progress',
+              name: lead.name,
+              status: 'done',
+              enrichment_status: enrichmentResult.status,
+              email_generated: true,
+              found_email: enrichmentResult.email || null,
+              found_website: enrichmentResult.website || null,
+            })
+          } catch (err) {
+            console.error(`[SearchAPI] Enrichment error for ${lead.name}:`, err)
+            send({
+              type: 'enrichment_progress',
+              name: lead.name,
+              status: 'error',
+              error: err instanceof Error ? err.message : 'Enrichment fehlgeschlagen',
+            })
+          }
+        }
+      }
+
       // Summary event
       send({
         type: 'summary',
@@ -181,6 +258,7 @@ export async function POST(request: NextRequest) {
         imported_count: imported,
         duplicate_count: duplicates,
         error_count: errors,
+        enriched_count: enriched,
       })
 
       controller.close()
@@ -192,69 +270,5 @@ export async function POST(request: NextRequest) {
       'Content-Type': 'application/x-ndjson',
       'Transfer-Encoding': 'chunked',
     },
-  })
-}
-
-// Fire-and-forget enrichment + email generation for a newly imported lead
-async function runEnrichmentForLead(
-  leadId: string,
-  lead: { name: string; company: string | null; website: string | null; email: string | null; phone: string | null; linkedin_url: string | null; headline: string | null },
-  vertical: string,
-) {
-  // Step 1: Enrich
-  const enrichmentResult = await enrichLead({
-    name: lead.name,
-    company: lead.company,
-    website: lead.website,
-    email: lead.email,
-    phone: lead.phone,
-    linkedin_url: lead.linkedin_url,
-    headline: lead.headline,
-  })
-
-  // Step 2: Update lead fields (only if currently empty)
-  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
-  if (enrichmentResult.email && !lead.email) updates.email = enrichmentResult.email
-  if (enrichmentResult.phone && !lead.phone) updates.phone = enrichmentResult.phone
-  if (enrichmentResult.website && !lead.website) updates.website = enrichmentResult.website
-  if (Object.keys(updates).length > 1) {
-    await supabase.from('leads').update(updates).eq('id', leadId)
-  }
-
-  // Step 3: Store enrichment activity
-  await supabase.from('activities').insert({
-    lead_id: leadId,
-    type: 'enrichment',
-    subject: `Lead angereichert (${enrichmentResult.status})`,
-    body: enrichmentResult.company_description || null,
-    metadata: { enrichment: enrichmentResult },
-    created_by: 'system',
-    created_at: new Date().toISOString(),
-  })
-
-  // Step 4: Generate email
-  const email = await generateOutreachEmail({
-    lead: {
-      name: lead.name,
-      company: lead.company,
-      headline: lead.headline,
-      vertical,
-      website: lead.website || enrichmentResult.website,
-    },
-    enrichment: {
-      company_description: enrichmentResult.company_description,
-      business_processes: enrichmentResult.business_processes,
-    },
-  })
-
-  // Step 5: Store email draft
-  await supabase.from('activities').insert({
-    lead_id: leadId,
-    type: 'email_draft',
-    subject: email.subject,
-    body: email.body,
-    metadata: { email_draft: email },
-    created_by: 'system',
-    created_at: new Date().toISOString(),
   })
 }

@@ -37,15 +37,14 @@ export async function POST(request: NextRequest) {
       await supabase.from('leads').update(leadUpdates).eq('id', leadId)
     }
 
-    // 4. Store enrichment activity
-    await supabase.from('activities').insert({
-      lead_id: leadId,
-      type: 'enrichment',
-      subject: `Lead angereichert (${enrichmentResult.status})`,
-      body: enrichmentResult.company_description || null,
-      metadata: { enrichment: enrichmentResult },
-      created_by: 'system',
-      created_at: new Date().toISOString(),
+    // 4. Store enrichment activity via RPC (bypass VIEW INSERT RETURNING issue)
+    await supabase.rpc('insert_activity', {
+      p_lead_id: leadId,
+      p_type: 'enrichment',
+      p_subject: `Lead angereichert (${enrichmentResult.status})`,
+      p_body: enrichmentResult.company_description || null,
+      p_metadata: { enrichment: enrichmentResult },
+      p_created_by: 'system',
     })
 
     // 5. Generate email
@@ -64,14 +63,14 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // 6. Store email draft activity
-    await supabase.from('activities').insert({
-      lead_id: leadId,
-      type: 'email_draft',
-      subject: email.subject,
-      body: email.body,
-      metadata: { email_draft: email },
-      created_by: 'system',
+    // 6. Store email draft activity via RPC (bypass VIEW INSERT RETURNING issue)
+    await supabase.rpc('insert_activity', {
+      p_lead_id: leadId,
+      p_type: 'email_draft',
+      p_subject: email.subject,
+      p_body: email.body,
+      p_metadata: { email_draft: email },
+      p_created_by: 'system',
       created_at: new Date().toISOString(),
     })
 
