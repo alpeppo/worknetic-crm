@@ -31,7 +31,8 @@ import {
   Rocket,
   LogOut,
   Moon,
-  Sun
+  Sun,
+  PenTool
 } from 'lucide-react'
 
 const mainNavigation = [

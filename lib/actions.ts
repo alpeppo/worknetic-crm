@@ -387,13 +387,10 @@ export async function createDeal(data: DealFormData) {
 }
 
 export async function updateDeal(id: string, data: Partial<DealFormData>) {
-  const { error } = await supabase
-    .from('deals')
-    .update({
-      ...data,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', id)
+  const { error } = await supabase.rpc('update_deal', {
+    deal_id: id,
+    deal_data: data,
+  })
 
   if (error) {
     console.error('Error updating deal:', error)
@@ -408,10 +405,7 @@ export async function updateDeal(id: string, data: Partial<DealFormData>) {
 }
 
 export async function deleteDeal(id: string) {
-  const { error } = await supabase
-    .from('deals')
-    .delete()
-    .eq('id', id)
+  const { error } = await supabase.rpc('delete_deal', { deal_id: id })
 
   if (error) {
     console.error('Error deleting deal:', error)
@@ -425,27 +419,26 @@ export async function deleteDeal(id: string) {
 }
 
 export async function updateDealStage(id: string, stage: string, lostReason?: string, lostNotes?: string) {
-  const updateData: Record<string, unknown> = {
-    stage,
-    updated_at: new Date().toISOString()
+  // Use RPC (database function) because public.deals is a VIEW and PostgREST always
+  // adds RETURNING * to mutations, which PostgreSQL views don't support.
+  // The update_deal_stage function writes directly to crm.deals, bypassing this.
+  const rpcParams: Record<string, unknown> = {
+    deal_id: id,
+    new_stage: stage,
   }
 
-  // If won or lost, set closed_at
   if (stage === 'won' || stage === 'lost') {
-    updateData.closed_at = new Date().toISOString()
+    rpcParams.new_closed_at = new Date().toISOString()
     if (stage === 'won') {
-      updateData.actual_close_date = new Date().toISOString()
+      rpcParams.new_actual_close_date = new Date().toISOString()
     }
     if (stage === 'lost') {
-      if (lostReason) updateData.lost_reason = lostReason
-      if (lostNotes) updateData.lost_notes = lostNotes
+      if (lostReason) rpcParams.new_lost_reason = lostReason
+      if (lostNotes) rpcParams.new_lost_notes = lostNotes
     }
   }
 
-  const { error } = await supabase
-    .from('deals')
-    .update(updateData)
-    .eq('id', id)
+  const { error } = await supabase.rpc('update_deal_stage', rpcParams)
 
   if (error) {
     console.error('Error updating deal stage:', error)

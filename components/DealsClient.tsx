@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Modal } from './Modal'
 import { createDeal, updateDealStage, updateDeal, deleteDeal, createActivity } from '@/lib/actions'
@@ -66,15 +66,48 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
     notes: ''
   })
 
-  // Optimistic local deals state — allows instant UI updates on drag & drop
+  // --- Drag & Drop State (completely separated from server state) ---
+  // stageOverrides: optimistic stage changes from drag-and-drop (dealId → newStage).
+  // These are layered ON TOP of the server data and CANNOT be overwritten by server re-renders.
+  const [stageOverrides, setStageOverrides] = useState<Record<string, string>>({})
+
+  // localDeals: server-synced state for non-drag operations (delete optimistic removal).
   const [localDeals, setLocalDeals] = useState<Deal[]>(deals)
-  useEffect(() => { setLocalDeals(deals) }, [deals])
+  useEffect(() => {
+    setLocalDeals(deals)
+  }, [deals])
+
+  // effectiveDeals: the final truth for rendering — server data + drag overrides on top.
+  const effectiveDeals = useMemo(() =>
+    localDeals.map(d => {
+      const override = stageOverrides[d.id]
+      return override ? { ...d, stage: override } : d
+    }),
+    [localDeals, stageOverrides]
+  )
+
+  // Clear overrides once server data confirms the new stage
+  useEffect(() => {
+    const keys = Object.keys(stageOverrides)
+    if (keys.length === 0) return
+    const confirmed = keys.filter(dealId => {
+      const serverDeal = deals.find(d => d.id === dealId)
+      return serverDeal && serverDeal.stage === stageOverrides[dealId]
+    })
+    if (confirmed.length > 0) {
+      setStageOverrides(prev => {
+        const next = { ...prev }
+        confirmed.forEach(id => delete next[id])
+        return next
+      })
+    }
+  }, [deals, stageOverrides])
 
   const leadMap = new Map(leads.map(l => [l.id, l]))
 
-  // Group deals by stage — uses localDeals for optimistic updates
+  // Group deals by stage — uses effectiveDeals (server data + drag overrides)
   const dealsByStage = STAGES.reduce((acc, stage) => {
-    acc[stage.id] = localDeals.filter(d => d.stage === stage.id)
+    acc[stage.id] = effectiveDeals.filter(d => d.stage === stage.id)
     return acc
   }, {} as Record<string, Deal[]>)
 
@@ -85,15 +118,15 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
     return acc
   }, {} as Record<string, number>)
 
-  // Stats — computed from localDeals so they update optimistically on drag & drop
-  const pipelineValue = localDeals.reduce((sum, d) => sum + (d.value || 0), 0)
-  const wonValue = localDeals.filter(d => d.stage === 'won').reduce((sum, d) => sum + (d.value || 0), 0)
-  const weightedPipeline = localDeals
+  // Stats — computed from effectiveDeals so they update optimistically on drag & drop
+  const pipelineValue = effectiveDeals.reduce((sum, d) => sum + (d.value || 0), 0)
+  const wonValue = effectiveDeals.filter(d => d.stage === 'won').reduce((sum, d) => sum + (d.value || 0), 0)
+  const weightedPipeline = effectiveDeals
     .filter(d => d.stage !== 'won' && d.stage !== 'lost')
     .reduce((sum, d) => sum + (d.value || 0) * ((d.probability || 50) / 100), 0)
-  const closedDeals = localDeals.filter(d => d.stage === 'won' || d.stage === 'lost')
+  const closedDeals = effectiveDeals.filter(d => d.stage === 'won' || d.stage === 'lost')
   const winRate = closedDeals.length > 0
-    ? Math.round((localDeals.filter(d => d.stage === 'won').length / closedDeals.length) * 100)
+    ? Math.round((effectiveDeals.filter(d => d.stage === 'won').length / closedDeals.length) * 100)
     : 0
 
   const resetForm = () => {
@@ -180,11 +213,15 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
 
   // Drag & Drop — Mouse-events based. No HTML5 DnD API at all.
   // Uses mousedown/mousemove/mouseup + elementFromPoint for 100% reliable drops.
-  // Optimistic UI: instantly moves card in localDeals, then syncs with server.
+  // Optimistic UI: stageOverrides moves the card instantly, server confirms later.
   const boardRef = useRef<HTMLDivElement>(null)
 
+  // Ref to always read the latest effectiveDeals without re-creating callbacks
+  const effectiveDealsRef = useRef(effectiveDeals)
+  effectiveDealsRef.current = effectiveDeals
+
   const performDrop = useCallback(async (dealId: string, newStage: string) => {
-    const deal = localDeals.find(d => d.id === dealId)
+    const deal = effectiveDealsRef.current.find(d => d.id === dealId)
     if (!deal || deal.stage === newStage) return
 
     // If dropping to "lost", open lost reason modal instead of direct drop
@@ -195,34 +232,47 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
       return
     }
 
-    // Optimistic update — move card immediately in UI
-    setLocalDeals(prev => prev.map(d =>
-      d.id === dealId ? { ...d, stage: newStage } : d
-    ))
+    // Optimistic update — just set a stage override. This is SEPARATE from server state
+    // and CANNOT be overwritten by useEffect/props/revalidation/router.refresh.
+    setStageOverrides(prev => ({ ...prev, [dealId]: newStage }))
 
-    // Server update
-    const result = await updateDealStage(dealId, newStage)
-    if (!result.success) {
-      // Revert on failure
-      setLocalDeals(prev => prev.map(d =>
-        d.id === dealId ? { ...d, stage: deal.stage } : d
-      ))
+    // Server update — if it fails, remove the override (card goes back)
+    try {
+      const result = await updateDealStage(dealId, newStage)
+      if (!result.success) {
+        setStageOverrides(prev => {
+          const next = { ...prev }
+          delete next[dealId]
+          return next
+        })
+      }
+    } catch {
+      setStageOverrides(prev => {
+        const next = { ...prev }
+        delete next[dealId]
+        return next
+      })
     }
-    router.refresh()
-  }, [localDeals, router])
+  }, [])
 
   const confirmLostDeal = async () => {
     if (!lostDealId) return
-    // Optimistic update
+    const dealId = lostDealId
+
+    // Optimistic update via override
+    setStageOverrides(prev => ({ ...prev, [dealId]: 'lost' }))
     setLocalDeals(prev => prev.map(d =>
-      d.id === lostDealId ? { ...d, stage: 'lost', lost_reason: lostReason, lost_notes: lostNotes } : d
+      d.id === dealId ? { ...d, lost_reason: lostReason, lost_notes: lostNotes } : d
     ))
     setLostDealId(null)
-    const result = await updateDealStage(lostDealId, 'lost', lostReason || undefined, lostNotes || undefined)
+    const result = await updateDealStage(dealId, 'lost', lostReason || undefined, lostNotes || undefined)
     if (!result.success) {
-      setLocalDeals(deals)
+      setStageOverrides(prev => {
+        const next = { ...prev }
+        delete next[dealId]
+        return next
+      })
     }
-    router.refresh()
   }
 
   const handleQuickNote = async () => {
@@ -520,7 +570,7 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
 
   return (
     <>
-      {/* Stats - computed from localDeals for instant updates */}
+      {/* Stats - computed from effectiveDeals for instant updates */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '32px' }}>
         <div
           style={{

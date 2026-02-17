@@ -59,7 +59,7 @@ interface ProgressResult {
 }
 
 interface SearchResult {
-  type: 'profile' | 'summary'
+  type: 'profile' | 'summary' | 'enrichment_start' | 'enrichment_progress'
   name?: string
   company?: string | null
   linkedin_url?: string
@@ -73,9 +73,17 @@ interface SearchResult {
   imported_count?: number
   duplicate_count?: number
   error_count?: number
+  enriched_count?: number
+  // enrichment_progress fields
+  status?: string
+  enrichment_status?: string
+  email_generated?: boolean
+  found_email?: string | null
+  found_website?: string | null
+  count?: number
 }
 
-type AutomationType = 'enrichment' | 'email' | 'pipeline' | 'search'
+type AutomationType = 'search' | 'email'
 
 interface AutomationsClientProps {
   leads: Lead[]
@@ -89,40 +97,22 @@ interface AutomationsClientProps {
 
 const AUTOMATIONS = [
   {
-    id: 'enrichment' as AutomationType,
-    name: 'Lead-Recherche',
-    description: 'Website scrapen + KI-Recherche via Perplexity Sonar. Findet E-Mail, Telefon, Firmenbeschreibung und Geschaeftsprozesse.',
-    icon: Globe,
-    color: '#007AFF',
-    bgColor: 'rgba(0, 122, 255, 0.10)',
-    defaultFilter: 'unenriched' as const,
-  },
-  {
-    id: 'email' as AutomationType,
-    name: 'E-Mail generieren',
-    description: 'Personalisierte Outreach-E-Mail mit GPT-5 Mini erstellen. Nutzt Recherche-Daten fuer maximale Personalisierung.',
-    icon: Mail,
-    color: '#AF52DE',
-    bgColor: 'rgba(175, 82, 222, 0.10)',
-    defaultFilter: 'no_email' as const,
-  },
-  {
-    id: 'pipeline' as AutomationType,
-    name: 'Komplett-Pipeline',
-    description: 'Recherche + E-Mail in einem Schritt. Ideal fuer neue Leads ohne Daten.',
-    icon: Zap,
-    color: '#FF9500',
-    bgColor: 'rgba(255, 149, 0, 0.10)',
-    defaultFilter: 'unenriched' as const,
-  },
-  {
     id: 'search' as AutomationType,
     name: 'Leads suchen',
-    description: 'Neue Leads via Perplexity Sonar finden — Name, Firma, Kontaktdaten, Website. Automatisch importieren + anreichern.',
+    description: 'Neue Leads via Perplexity Sonar finden. Importiert automatisch mit Kontaktdaten (LinkedIn, Website, E-Mail, Telefon) und reichert an.',
     icon: Search,
     color: '#34C759',
     bgColor: 'rgba(52, 199, 89, 0.10)',
     defaultFilter: 'all' as const,
+  },
+  {
+    id: 'email' as AutomationType,
+    name: 'E-Mails generieren',
+    description: 'Recherchiert die Firma tiefgehend via Perplexity Sonar und erstellt hyperpersonalisierte Outreach-E-Mails.',
+    icon: Mail,
+    color: '#AF52DE',
+    bgColor: 'rgba(175, 82, 222, 0.10)',
+    defaultFilter: 'no_email' as const,
   },
 ]
 
@@ -167,6 +157,8 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
   const [searchMaxLeads, setSearchMaxLeads] = useState(20)
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [searchSummary, setSearchSummary] = useState<SearchResult | null>(null)
+  const [searchPhase, setSearchPhase] = useState<'searching' | 'enriching' | 'done'>('searching')
+  const [enrichmentProgress, setEnrichmentProgress] = useState<SearchResult[]>([])
 
   // Stats
   const totalLeads = leads.length
@@ -302,6 +294,8 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
     setIsDone(false)
     setSearchResults([])
     setSearchSummary(null)
+    setSearchPhase('searching')
+    setEnrichmentProgress([])
     setProgress({ completed: 0, total: searchMaxLeads, results: [] })
 
     try {
@@ -330,7 +324,19 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
               const event: SearchResult = JSON.parse(line)
               if (event.type === 'summary') {
                 setSearchSummary(event)
-              } else {
+              } else if (event.type === 'enrichment_start') {
+                setSearchPhase('enriching')
+              } else if (event.type === 'enrichment_progress') {
+                setEnrichmentProgress(prev => {
+                  const existing = prev.findIndex(e => e.name === event.name)
+                  if (existing >= 0) {
+                    const updated = [...prev]
+                    updated[existing] = event
+                    return updated
+                  }
+                  return [...prev, event]
+                })
+              } else if (event.type === 'profile') {
                 setSearchResults(prev => [...prev, event])
                 setProgress(prev => ({ ...prev, completed: prev.completed + 1 }))
               }
@@ -343,7 +349,11 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
             const event: SearchResult = JSON.parse(buffer)
             if (event.type === 'summary') {
               setSearchSummary(event)
-            } else {
+            } else if (event.type === 'enrichment_start') {
+              setSearchPhase('enriching')
+            } else if (event.type === 'enrichment_progress') {
+              setEnrichmentProgress(prev => [...prev, event])
+            } else if (event.type === 'profile') {
               setSearchResults(prev => [...prev, event])
               setProgress(prev => ({ ...prev, completed: prev.completed + 1 }))
             }
@@ -355,6 +365,7 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
     } finally {
       setIsRunning(false)
       setIsDone(true)
+      setSearchPhase('done')
       router.refresh()
     }
   }
@@ -611,8 +622,8 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
         </div>
       )}
 
-      {/* Lead Selection Panel (for enrichment/email/pipeline) */}
-      {selectedAutomation && selectedAutomation !== 'search' && !isRunning && !isDone && (
+      {/* Lead Selection Panel (for email generation) */}
+      {selectedAutomation === 'email' && !isRunning && !isDone && (
         <div
           style={{
             background: 'var(--color-bg)',
@@ -977,7 +988,12 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
                       </span>
                     )}
                   </div>
-                  <div style={{ display: 'flex', gap: '12px', marginTop: '2px' }}>
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '2px', flexWrap: 'wrap' }}>
+                    {result.linkedin_url && (
+                      <span style={{ fontSize: '11px', color: '#0077B5' }}>
+                        LinkedIn
+                      </span>
+                    )}
                     {result.website && (
                       <span style={{ fontSize: '11px', color: 'var(--color-text-tertiary)' }}>
                         {(() => { try { return new URL(result.website!.startsWith('http') ? result.website! : `https://${result.website}`).hostname.replace('www.', '') } catch { return result.website } })()}
@@ -991,6 +1007,11 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
                     {result.phone && (
                       <span style={{ fontSize: '11px', color: 'var(--color-text-tertiary)' }}>
                         {result.phone}
+                      </span>
+                    )}
+                    {!result.linkedin_url && !result.website && !result.email && !result.phone && result.imported && (
+                      <span style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', fontStyle: 'italic' }}>
+                        Kontaktdaten werden angereichert...
                       </span>
                     )}
                   </div>
@@ -1016,7 +1037,7 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
               </div>
             ))}
 
-            {isRunning && (
+            {isRunning && searchPhase === 'searching' && (
               <div
                 style={{
                   display: 'flex',
@@ -1030,6 +1051,50 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
                 <span style={{ flex: 1, fontSize: '14px', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
                   Suche weitere Profile...
                 </span>
+              </div>
+            )}
+
+            {/* Enrichment Phase */}
+            {searchPhase === 'enriching' && enrichmentProgress.length > 0 && (
+              <div style={{ borderTop: '1px solid var(--color-border)' }}>
+                <div
+                  style={{
+                    padding: '12px 24px',
+                    background: 'rgba(0, 122, 255, 0.04)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                  }}
+                >
+                  <Loader2 size={16} color="var(--color-blue)" style={{ animation: 'spin 1s linear infinite' }} />
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-blue)' }}>
+                    Leads anreichern & E-Mails generieren ({enrichmentProgress.filter(e => e.status === 'done').length}/{enrichmentProgress.length})
+                  </span>
+                </div>
+                {enrichmentProgress.map((ep, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '8px 24px',
+                      fontSize: '13px',
+                      color: 'var(--color-text-secondary)',
+                    }}
+                  >
+                    {ep.status === 'running' && <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} color="var(--color-blue)" />}
+                    {ep.status === 'done' && <CheckCircle size={14} color="var(--color-green)" />}
+                    {ep.status === 'error' && <XCircle size={14} color="var(--color-red)" />}
+                    <span>{ep.name}</span>
+                    {ep.status === 'done' && ep.email_generated && (
+                      <span style={{ fontSize: '11px', color: 'var(--color-green)' }}>E-Mail erstellt</span>
+                    )}
+                    {ep.found_email && (
+                      <span style={{ fontSize: '11px', color: 'var(--color-blue)' }}>{ep.found_email}</span>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -1049,6 +1114,7 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
               {searchSummary && (
                 <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
                   {searchSummary.total} gefunden &middot; {searchSummary.imported_count} importiert &middot; {searchSummary.duplicate_count} Duplikate
+                  {(searchSummary.enriched_count ?? 0) > 0 && ` · ${searchSummary.enriched_count} angereichert`}
                   {(searchSummary.error_count ?? 0) > 0 && ` · ${searchSummary.error_count} Fehler`}
                 </span>
               )}
@@ -1061,8 +1127,8 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
         </div>
       )}
 
-      {/* Progress View (for enrichment/email/pipeline) */}
-      {(isRunning || isDone) && selectedAutomation && selectedAutomation !== 'search' && (
+      {/* Progress View (for email generation) */}
+      {(isRunning || isDone) && selectedAutomation === 'email' && (
         <div
           style={{
             background: 'var(--color-bg)',
