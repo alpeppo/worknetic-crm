@@ -72,12 +72,12 @@ export default function LoginPage() {
               width: '64px',
               height: '64px',
               borderRadius: '18px',
-              background: 'linear-gradient(135deg, #007AFF, #5856D6)',
+              background: 'linear-gradient(135deg, #4F46E5, #818CF8)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               margin: '0 auto 20px',
-              boxShadow: '0 8px 32px rgba(0, 122, 255, 0.3)',
+              boxShadow: '0 8px 32px rgba(79, 70, 229, 0.3)',
             }}
           >
             <Sparkles size={28} style={{ color: 'white' }} />
@@ -108,12 +108,12 @@ export default function LoginPage() {
                   alignItems: 'center',
                   gap: '10px',
                   padding: '14px 18px',
-                  background: 'rgba(255, 59, 48, 0.08)',
-                  border: '1px solid rgba(255, 59, 48, 0.2)',
+                  background: 'rgba(239, 68, 68, 0.08)',
+                  border: '1px solid rgba(239, 68, 68, 0.2)',
                   borderRadius: '14px',
                   marginBottom: '24px',
                   fontSize: '14px',
-                  color: '#FF3B30',
+                  color: '#EF4444',
                 }}
               >
                 {error}
@@ -144,7 +144,7 @@ export default function LoginPage() {
                   borderRadius: '14px',
                   transition: 'all 0.2s',
                 }}
-                className="focus-within:border-[#007AFF] focus-within:shadow-[0_0_0_4px_rgba(0,122,255,0.1)]"
+                className="focus-within:border-[#4F46E5] focus-within:shadow-[0_0_0_4px_rgba(0,122,255,0.1)]"
               >
                 <Mail size={18} style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }} />
                 <input
@@ -190,7 +190,7 @@ export default function LoginPage() {
                   borderRadius: '14px',
                   transition: 'all 0.2s',
                 }}
-                className="focus-within:border-[#007AFF] focus-within:shadow-[0_0_0_4px_rgba(0,122,255,0.1)]"
+                className="focus-within:border-[#4F46E5] focus-within:shadow-[0_0_0_4px_rgba(0,122,255,0.1)]"
               >
                 <Lock size={18} style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }} />
                 <input
@@ -224,7 +224,7 @@ export default function LoginPage() {
                 gap: '10px',
                 width: '100%',
                 padding: '14px',
-                background: isLoading ? '#007AFFcc' : '#007AFF',
+                background: isLoading ? '#4F46E5cc' : '#4F46E5',
                 border: 'none',
                 borderRadius: '14px',
                 fontSize: '15px',
@@ -232,7 +232,7 @@ export default function LoginPage() {
                 color: 'white',
                 cursor: isLoading ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s',
-                boxShadow: '0 4px 16px rgba(0, 122, 255, 0.3)',
+                boxShadow: '0 4px 16px rgba(79, 70, 229, 0.3)',
               }}
             >
               {isLoading ? (
@@ -254,7 +254,7 @@ export default function LoginPage() {
                 background: 'none',
                 border: 'none',
                 fontSize: '14px',
-                color: '#007AFF',
+                color: '#4F46E5',
                 cursor: 'pointer',
                 fontWeight: 500,
               }}

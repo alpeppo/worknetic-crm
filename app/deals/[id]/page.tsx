@@ -21,11 +21,11 @@ import {
 } from 'lucide-react'
 
 const STAGES = [
-  { id: 'discovery', name: 'Discovery', color: '#3b82f6' },
-  { id: 'qualification', name: 'Qualification', color: '#8b5cf6' },
-  { id: 'proposal', name: 'Proposal', color: '#f59e0b' },
-  { id: 'negotiation', name: 'Negotiation', color: '#ef4444' },
-  { id: 'won', name: 'Won', color: '#10b981' },
+  { id: 'discovery', name: 'Discovery', color: '#4F46E5' },
+  { id: 'qualification', name: 'Qualification', color: '#818CF8' },
+  { id: 'proposal', name: 'Proposal', color: '#F59E0B' },
+  { id: 'negotiation', name: 'Negotiation', color: '#EF4444' },
+  { id: 'won', name: 'Won', color: '#10B981' },
 ]
 
 export default async function DealDetailPage({
@@ -74,7 +74,7 @@ export default async function DealDetailPage({
   }
 
   const stage = STAGES.find(s => s.id === deal.stage)
-  const stageColor = stage?.color || '#6b7280'
+  const stageColor = stage?.color || '#64748B'
   const stageName = stage?.name || deal.stage
 
   const getActivityIcon = (type: string) => {
@@ -85,6 +85,16 @@ export default async function DealDetailPage({
       case 'meeting': return <CalendarCheck size={16} />
       case 'note': return <MessageSquare size={16} />
       default: return <Clock size={16} />
+    }
+  }
+
+  const getActivityColor = (type: string) => {
+    switch (type) {
+      case 'call': return '#10B981'
+      case 'email_sent': case 'email_received': return '#4F46E5'
+      case 'meeting': return '#818CF8'
+      case 'note': return '#64748B'
+      default: return '#64748B'
     }
   }
 
@@ -104,7 +114,7 @@ export default async function DealDetailPage({
     <>
       <Header
         title={deal.name}
-        subtitle={`${stageName} \u00b7 \u20ac${(deal.value || 0).toLocaleString()}`}
+        subtitle={`${stageName} · €${(deal.value || 0).toLocaleString()}`}
         actions={<DealDetailClient deal={deal} />}
       />
 
@@ -112,54 +122,55 @@ export default async function DealDetailPage({
         {/* Back Link */}
         <Link
           href="/deals"
-          className="inline-flex items-center gap-2 mb-6 text-sm text-muted hover:text-primary transition-colors"
+          className="inline-flex items-center gap-2 mb-8 text-sm hover:text-[var(--color-blue)] transition-colors"
+          style={{ color: 'var(--color-text-tertiary)' }}
         >
           <ArrowLeft size={16} />
-          Zuruck zu Deals
+          Zurück zu Deals
         </Link>
 
         {/* Interactive Stage Pipeline */}
         <DealStagePipeline deal={deal} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="detail-grid">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="detail-main">
             {/* Deal Info Card */}
             <div className="card">
               <div className="card-header">
                 <h3 className="card-title">Deal-Details</h3>
               </div>
               <div className="card-body">
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 gap-8">
                   {/* Value */}
                   <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <DollarSign size={16} className="text-muted" />
-                      <span className="text-xs text-muted font-medium uppercase tracking-wide">Wert</span>
+                    <div className="flex items-center gap-2 mb-3">
+                      <DollarSign size={16} style={{ color: 'var(--color-text-tertiary)' }} />
+                      <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Wert</span>
                     </div>
-                    <div style={{ fontSize: '28px', fontWeight: 700, color: '#007AFF', letterSpacing: '-0.5px' }}>
-                      &euro;{(deal.value || 0).toLocaleString()}
+                    <div style={{ fontSize: '28px', fontWeight: 700, color: '#4F46E5', letterSpacing: '-0.5px' }}>
+                      €{(deal.value || 0).toLocaleString()}
                     </div>
                   </div>
 
                   {/* Probability */}
                   <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <TrendingUp size={16} className="text-muted" />
-                      <span className="text-xs text-muted font-medium uppercase tracking-wide">Wahrscheinlichkeit</span>
+                    <div className="flex items-center gap-2 mb-3">
+                      <TrendingUp size={16} style={{ color: 'var(--color-text-tertiary)' }} />
+                      <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Wahrscheinlichkeit</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <div style={{ fontSize: '28px', fontWeight: 700, letterSpacing: '-0.5px' }}>
                         {deal.probability || 0}%
                       </div>
-                      <div style={{ flex: 1, height: '8px', background: 'var(--color-bg-secondary)', borderRadius: '4px' }}>
+                      <div style={{ flex: 1, height: '8px', background: 'var(--color-bg-tertiary)', borderRadius: '100px' }}>
                         <div
                           style={{
                             width: `${deal.probability || 0}%`,
                             height: '100%',
-                            borderRadius: '4px',
-                            background: (deal.probability || 0) >= 70 ? '#34C759' : (deal.probability || 0) >= 40 ? '#FF9500' : '#FF3B30',
-                            transition: 'width 0.3s ease'
+                            borderRadius: '100px',
+                            background: (deal.probability || 0) >= 70 ? '#10B981' : (deal.probability || 0) >= 40 ? '#F59E0B' : '#EF4444',
+                            transition: 'width 0.4s ease'
                           }}
                         />
                       </div>
@@ -168,16 +179,13 @@ export default async function DealDetailPage({
 
                   {/* Stage */}
                   <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs text-muted font-medium uppercase tracking-wide">Stage</span>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Stage</span>
                     </div>
                     <span
+                      className="badge"
                       style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
                         padding: '6px 14px',
-                        borderRadius: '8px',
                         fontSize: '13px',
                         fontWeight: 600,
                         color: stageColor,
@@ -199,18 +207,18 @@ export default async function DealDetailPage({
 
                   {/* Expected Close Date */}
                   <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Calendar size={16} className="text-muted" />
-                      <span className="text-xs text-muted font-medium uppercase tracking-wide">Erwarteter Abschluss</span>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Calendar size={16} style={{ color: 'var(--color-text-tertiary)' }} />
+                      <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Erwarteter Abschluss</span>
                     </div>
-                    <div style={{ fontSize: '16px', fontWeight: 500 }}>
+                    <div style={{ fontSize: '16px', fontWeight: 500, color: 'var(--color-text)' }}>
                       {deal.expected_close_date
                         ? new Date(deal.expected_close_date).toLocaleDateString('de-DE', {
                             day: '2-digit',
                             month: 'long',
                             year: 'numeric'
                           })
-                        : <span className="text-muted">Nicht gesetzt</span>
+                        : <span style={{ color: 'var(--color-text-tertiary)' }}>Nicht gesetzt</span>
                       }
                     </div>
                   </div>
@@ -219,29 +227,29 @@ export default async function DealDetailPage({
                 {/* Weighted Value */}
                 <div
                   style={{
-                    marginTop: '24px',
-                    padding: '16px',
-                    borderRadius: '12px',
+                    marginTop: '28px',
+                    padding: '20px',
+                    borderRadius: 'var(--radius-lg)',
                     background: 'var(--color-bg-secondary)',
                     border: '1px solid var(--color-border)'
                   }}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted">Gewichteter Wert</span>
-                    <span style={{ fontSize: '18px', fontWeight: 700, color: '#34C759' }}>
-                      &euro;{Math.round((deal.value || 0) * ((deal.probability || 0) / 100)).toLocaleString()}
+                    <span style={{ fontSize: '14px', color: 'var(--color-text-tertiary)' }}>Gewichteter Wert</span>
+                    <span style={{ fontSize: '20px', fontWeight: 700, color: '#10B981' }}>
+                      €{Math.round((deal.value || 0) * ((deal.probability || 0) / 100)).toLocaleString()}
                     </span>
                   </div>
                 </div>
 
                 {/* Notes */}
                 {deal.notes && (
-                  <div style={{ marginTop: '24px' }}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <FileText size={16} className="text-muted" />
-                      <span className="text-xs text-muted font-medium uppercase tracking-wide">Notizen</span>
+                  <div style={{ marginTop: '28px' }}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <FileText size={16} style={{ color: 'var(--color-text-tertiary)' }} />
+                      <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Notizen</span>
                     </div>
-                    <p className="text-sm text-secondary" style={{ lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                    <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>
                       {deal.notes}
                     </p>
                   </div>
@@ -252,50 +260,55 @@ export default async function DealDetailPage({
             {/* Activities Timeline */}
             <div className="card">
               <div className="card-header">
-                <h3 className="card-title">Aktivitaten</h3>
+                <h3 className="card-title">Aktivitäten</h3>
               </div>
               <div className="card-body">
                 {allActivities.length > 0 ? (
-                  <div className="space-y-4">
-                    {allActivities.map((activity) => (
-                      <div
-                        key={activity.id}
-                        className="flex gap-4 pb-4 border-b border-[var(--border-light)] last:border-0 last:pb-0"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center text-muted flex-shrink-0">
-                          {getActivityIcon(activity.type)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="badge badge-default text-xs">
-                              {getActivityLabel(activity.type)}
-                            </span>
-                            <span className="text-xs text-muted">
-                              {new Date(activity.created_at).toLocaleDateString('de-DE', {
-                                day: '2-digit',
-                                month: 'short',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </span>
+                  <div>
+                    {allActivities.map((activity) => {
+                      const color = getActivityColor(activity.type)
+                      return (
+                        <div key={activity.id} className="timeline-item">
+                          <div
+                            className="timeline-icon"
+                            style={{ background: `${color}12`, color }}
+                          >
+                            {getActivityIcon(activity.type)}
                           </div>
-                          <p className="text-sm font-medium">
-                            {activity.subject || activity.type}
-                          </p>
-                          {activity.body && (
-                            <p className="text-sm text-secondary mt-1">{activity.body}</p>
-                          )}
+                          <div className="timeline-content">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="badge badge-default" style={{ fontSize: '12px' }}>
+                                {getActivityLabel(activity.type)}
+                              </span>
+                              <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>
+                                {new Date(activity.created_at).toLocaleDateString('de-DE', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </span>
+                            </div>
+                            <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text)' }}>
+                              {activity.subject || activity.type}
+                            </p>
+                            {activity.body && (
+                              <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginTop: '6px', lineHeight: 1.6 }}>
+                                {activity.body}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <div className="w-12 h-12 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center mx-auto mb-3">
-                      <Clock size={20} className="text-muted" />
+                  <div className="empty-state" style={{ padding: '48px 24px' }}>
+                    <div className="empty-state-icon">
+                      <Clock size={24} />
                     </div>
-                    <p className="text-muted">Noch keine Aktivitaten</p>
+                    <div className="empty-state-title">Noch keine Aktivitäten</div>
                   </div>
                 )}
               </div>
@@ -303,7 +316,7 @@ export default async function DealDetailPage({
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="detail-sidebar">
             {/* Lead Info Card */}
             {lead && (
               <div className="card">
@@ -317,55 +330,49 @@ export default async function DealDetailPage({
                   >
                     <div
                       className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold text-white flex-shrink-0"
-                      style={{ background: 'linear-gradient(135deg, var(--brand-primary), #1a7fb3)' }}
+                      style={{ background: 'linear-gradient(135deg, var(--color-indigo), var(--color-indigo-light))' }}
                     >
                       {lead.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-primary">{lead.name}</div>
+                      <div style={{ fontWeight: 600, color: 'var(--color-text)' }}>{lead.name}</div>
                       {lead.company && (
-                        <div className="flex items-center gap-1.5 text-sm text-secondary mt-0.5">
+                        <div className="flex items-center gap-1.5 mt-1" style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>
                           <Building2 size={13} />
                           {lead.company}
                         </div>
                       )}
                       {lead.headline && (
-                        <div className="text-xs text-muted mt-1 truncate">{lead.headline}</div>
+                        <div className="truncate" style={{ fontSize: '13px', color: 'var(--color-text-tertiary)', marginTop: '4px' }}>{lead.headline}</div>
                       )}
                     </div>
                   </Link>
 
-                  <div className="mt-4 pt-4 border-t border-[var(--border-light)] space-y-3">
+                  <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     {lead.email && (
-                      <a
-                        href={`mailto:${lead.email}`}
-                        className="flex items-center gap-3 text-sm hover:text-[var(--brand-primary)] transition-colors"
-                      >
-                        <Mail size={16} className="text-muted flex-shrink-0" />
+                      <a href={`mailto:${lead.email}`} className="contact-link">
+                        <Mail size={16} />
                         <span className="truncate">{lead.email}</span>
                       </a>
                     )}
                     {lead.phone && (
-                      <a
-                        href={`tel:${lead.phone}`}
-                        className="flex items-center gap-3 text-sm hover:text-[var(--brand-primary)] transition-colors"
-                      >
-                        <Phone size={16} className="text-muted flex-shrink-0" />
+                      <a href={`tel:${lead.phone}`} className="contact-link">
+                        <Phone size={16} />
                         <span>{lead.phone}</span>
                       </a>
                     )}
                     {!lead.email && !lead.phone && (
-                      <div className="text-sm text-muted">Keine Kontaktdaten vorhanden</div>
+                      <div style={{ fontSize: '14px', color: 'var(--color-text-tertiary)' }}>Keine Kontaktdaten vorhanden</div>
                     )}
                   </div>
 
-                  <div className="mt-4 pt-4 border-t border-[var(--border-light)]">
+                  <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--color-border)' }}>
                     <Link
                       href={`/leads/${lead.id}`}
-                      className="text-sm font-medium hover:underline"
-                      style={{ color: 'var(--brand-primary)' }}
+                      style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-blue)', textDecoration: 'none' }}
+                      className="hover:underline"
                     >
-                      Lead-Profil anzeigen &rarr;
+                      Lead-Profil anzeigen →
                     </Link>
                   </div>
                 </div>
@@ -377,10 +384,10 @@ export default async function DealDetailPage({
               <div className="card-header">
                 <h3 className="card-title">Informationen</h3>
               </div>
-              <div className="card-body space-y-4">
-                <div>
-                  <div className="text-xs text-muted mb-1">Erstellt am</div>
-                  <span className="text-sm font-medium">
+              <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div className="pipeline-info-item">
+                  <div className="pipeline-info-label">Erstellt am</div>
+                  <span className="pipeline-info-value">
                     {new Date(deal.created_at).toLocaleDateString('de-DE', {
                       day: '2-digit',
                       month: 'long',
@@ -388,9 +395,9 @@ export default async function DealDetailPage({
                     })}
                   </span>
                 </div>
-                <div>
-                  <div className="text-xs text-muted mb-1">Zuletzt aktualisiert</div>
-                  <span className="text-sm font-medium">
+                <div className="pipeline-info-item">
+                  <div className="pipeline-info-label">Zuletzt aktualisiert</div>
+                  <span className="pipeline-info-value">
                     {new Date(deal.updated_at).toLocaleDateString('de-DE', {
                       day: '2-digit',
                       month: 'long',
@@ -399,9 +406,9 @@ export default async function DealDetailPage({
                   </span>
                 </div>
                 {deal.closed_at && (
-                  <div>
-                    <div className="text-xs text-muted mb-1">Abgeschlossen am</div>
-                    <span className="text-sm font-medium">
+                  <div className="pipeline-info-item">
+                    <div className="pipeline-info-label">Abgeschlossen am</div>
+                    <span className="pipeline-info-value">
                       {new Date(deal.closed_at).toLocaleDateString('de-DE', {
                         day: '2-digit',
                         month: 'long',
@@ -411,17 +418,17 @@ export default async function DealDetailPage({
                   </div>
                 )}
                 {deal.package_type && (
-                  <div>
-                    <div className="text-xs text-muted mb-1">Paket-Typ</div>
+                  <div className="pipeline-info-item">
+                    <div className="pipeline-info-label">Paket-Typ</div>
                     <span className="badge badge-primary">{deal.package_type}</span>
                   </div>
                 )}
                 {deal.assigned_to && (
-                  <div>
-                    <div className="text-xs text-muted mb-1">Zugewiesen an</div>
+                  <div className="pipeline-info-item">
+                    <div className="pipeline-info-label">Zugewiesen an</div>
                     <div className="flex items-center gap-2">
-                      <User size={14} className="text-muted" />
-                      <span className="text-sm font-medium">{deal.assigned_to}</span>
+                      <User size={14} style={{ color: 'var(--color-text-tertiary)' }} />
+                      <span className="pipeline-info-value">{deal.assigned_to}</span>
                     </div>
                   </div>
                 )}

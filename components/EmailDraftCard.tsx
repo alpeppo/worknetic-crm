@@ -183,7 +183,7 @@ export function EmailDraftCard({ emailActivity, lead }: EmailDraftCardProps) {
               alignItems: 'center',
               justifyContent: 'center',
               color: 'var(--color-purple)',
-              background: 'rgba(175, 82, 222, 0.10)',
+              background: 'rgba(129, 140, 248, 0.10)',
             }}
           >
             <Sparkles size={16} />
@@ -212,7 +212,7 @@ export function EmailDraftCard({ emailActivity, lead }: EmailDraftCardProps) {
               fontSize: '11px',
               fontWeight: 500,
               color: 'var(--color-purple)',
-              background: 'rgba(175, 82, 222, 0.08)',
+              background: 'rgba(129, 140, 248, 0.08)',
             }}
           >
             <Sparkles size={12} />
@@ -547,7 +547,7 @@ export function EmailDraftCard({ emailActivity, lead }: EmailDraftCardProps) {
                   padding: '8px 14px',
                   borderRadius: 'var(--radius-md)',
                   border: 'none',
-                  background: 'rgba(175, 82, 222, 0.10)',
+                  background: 'rgba(129, 140, 248, 0.10)',
                   color: 'var(--color-purple)',
                   fontSize: '12px',
                   fontWeight: 600,
@@ -557,11 +557,11 @@ export function EmailDraftCard({ emailActivity, lead }: EmailDraftCardProps) {
                 }}
                 onMouseEnter={(e) => {
                   if (!isRegenerating) {
-                    e.currentTarget.style.background = 'rgba(175, 82, 222, 0.18)'
+                    e.currentTarget.style.background = 'rgba(129, 140, 248, 0.18)'
                   }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(175, 82, 222, 0.10)'
+                  e.currentTarget.style.background = 'rgba(129, 140, 248, 0.10)'
                 }}
               >
                 {isRegenerating ? (

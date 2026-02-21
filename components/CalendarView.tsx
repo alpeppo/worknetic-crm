@@ -50,9 +50,9 @@ const TYPE_COLORS: Record<string, string> = {
   meeting: '#8b5cf6',
   note: '#6b7280',
   linkedin_message: '#0077b5',
-  video_call: '#FF9500',
+  video_call: '#F59E0B',
   whatsapp: '#25D366',
-  sms: '#5AC8FA',
+  sms: '#60A5FA',
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -331,7 +331,7 @@ export default function CalendarView({ activities, leads }: CalendarViewProps) {
                   borderBottom: index < calendarDays.length - 7 ? '1px solid var(--color-border)' : 'none',
                   cursor: 'pointer',
                   background: isSelected
-                    ? 'rgba(0, 122, 255, 0.04)'
+                    ? 'rgba(79, 70, 229, 0.04)'
                     : 'transparent',
                   transition: 'background 0.15s ease',
                   position: 'relative',
@@ -349,11 +349,11 @@ export default function CalendarView({ activities, leads }: CalendarViewProps) {
                     fontSize: '13px',
                     fontWeight: isToday ? 600 : day.isCurrentMonth ? 500 : 400,
                     color: isToday
-                      ? '#007AFF'
+                      ? '#4F46E5'
                       : day.isCurrentMonth
                         ? 'var(--color-text)'
                         : 'var(--color-text-tertiary)',
-                    border: isToday ? '2px solid #007AFF' : '2px solid transparent',
+                    border: isToday ? '2px solid #4F46E5' : '2px solid transparent',
                     opacity: day.isCurrentMonth ? 1 : 0.4,
                     marginBottom: '4px',
                   }}

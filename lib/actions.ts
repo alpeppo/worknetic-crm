@@ -6,6 +6,53 @@ import { enrichLead } from './enrichment'
 import { generateOutreachEmail } from './email-generation'
 
 // ============================================
+// HELPERS
+// ============================================
+
+// Direct REST PATCH for leads — bypasses supabase-js RETURNING behavior
+// which breaks on views with INSTEAD rules
+async function patchLead(id: string, data: Record<string, unknown>) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const res = await fetch(`${url}/rest/v1/leads?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': key,
+      'Authorization': `Bearer ${key}`,
+      'Prefer': 'return=minimal',
+    },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    return { error: text }
+  }
+  return { error: null }
+}
+
+async function patchLeadsBulk(ids: string[], data: Record<string, unknown>) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const filter = ids.map(id => `"${id}"`).join(',')
+  const res = await fetch(`${url}/rest/v1/leads?id=in.(${filter})`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': key,
+      'Authorization': `Bearer ${key}`,
+      'Prefer': 'return=minimal',
+    },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    return { error: text }
+  }
+  return { error: null }
+}
+
+// ============================================
 // LEAD ACTIONS
 // ============================================
 
@@ -108,7 +155,7 @@ async function runEnrichmentPipeline(
   if (enrichmentResult.website && !lead.website) leadUpdates.website = enrichmentResult.website
 
   if (Object.keys(leadUpdates).length > 1) {
-    await supabase.from('leads').update(leadUpdates).eq('id', leadId)
+    await patchLead(leadId, leadUpdates)
   }
 
   // Step 3: Store enrichment activity
@@ -153,41 +200,27 @@ async function runEnrichmentPipeline(
 }
 
 export async function updateLead(id: string, data: Partial<LeadFormData>) {
-  const { data: lead, error } = await supabase
-    .from('leads')
-    .update({
-      ...data,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', id)
-    .select()
-    .single()
+  const { error } = await patchLead(id, { ...data, updated_at: new Date().toISOString() })
 
   if (error) {
     console.error('Error updating lead:', error)
-    return { success: false, error: error.message }
+    return { success: false, error }
   }
 
   revalidatePath('/leads')
   revalidatePath(`/leads/${id}`)
   revalidatePath('/')
 
-  return { success: true, lead }
+  return { success: true }
 }
 
 export async function deleteLead(id: string) {
   // Soft delete
-  const { error } = await supabase
-    .from('leads')
-    .update({
-      deleted_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', id)
+  const { error } = await patchLead(id, { deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
 
   if (error) {
     console.error('Error deleting lead:', error)
-    return { success: false, error: error.message }
+    return { success: false, error }
   }
 
   revalidatePath('/leads')
@@ -197,19 +230,11 @@ export async function deleteLead(id: string) {
 }
 
 export async function updateLeadStage(id: string, stage: string) {
-  const { data: lead, error } = await supabase
-    .from('leads')
-    .update({
-      stage,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', id)
-    .select('name')
-    .single()
+  const { error } = await patchLead(id, { stage, updated_at: new Date().toISOString() })
 
   if (error) {
     console.error('Error updating stage:', error)
-    return { success: false, error: error.message }
+    return { success: false, error }
   }
 
   // Log stage change activity
@@ -225,21 +250,15 @@ export async function updateLeadStage(id: string, stage: string) {
   revalidatePath(`/leads/${id}`)
   revalidatePath('/')
 
-  return { success: true, lead }
+  return { success: true }
 }
 
 export async function setFollowUp(id: string, date: string) {
-  const { error } = await supabase
-    .from('leads')
-    .update({
-      next_follow_up_at: date,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', id)
+  const { error } = await patchLead(id, { next_follow_up_at: date, updated_at: new Date().toISOString() })
 
   if (error) {
     console.error('Error setting follow-up:', error)
-    return { success: false, error: error.message }
+    return { success: false, error }
   }
 
   revalidatePath('/leads')
@@ -250,17 +269,11 @@ export async function setFollowUp(id: string, date: string) {
 }
 
 export async function markLeadReviewed(id: string, reviewed: boolean) {
-  const { error } = await supabase
-    .from('leads')
-    .update({
-      reviewed,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', id)
+  const { error } = await patchLead(id, { reviewed, updated_at: new Date().toISOString() })
 
   if (error) {
     console.error('Error marking lead reviewed:', error)
-    return { success: false, error: error.message }
+    return { success: false, error }
   }
 
   // Log activity
@@ -691,17 +704,11 @@ export async function deleteSavedFilter(id: string) {
 // ============================================
 
 export async function bulkUpdateLeadStage(leadIds: string[], stage: string) {
-  const { error } = await supabase
-    .from('leads')
-    .update({
-      stage,
-      updated_at: new Date().toISOString()
-    })
-    .in('id', leadIds)
+  const { error } = await patchLeadsBulk(leadIds, { stage, updated_at: new Date().toISOString() })
 
   if (error) {
     console.error('Error bulk updating stage:', error)
-    return { success: false, error: error.message }
+    return { success: false, error }
   }
 
   revalidatePath('/leads')
@@ -710,17 +717,11 @@ export async function bulkUpdateLeadStage(leadIds: string[], stage: string) {
 }
 
 export async function bulkDeleteLeads(leadIds: string[]) {
-  const { error } = await supabase
-    .from('leads')
-    .update({
-      deleted_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    })
-    .in('id', leadIds)
+  const { error } = await patchLeadsBulk(leadIds, { deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
 
   if (error) {
     console.error('Error bulk deleting leads:', error)
-    return { success: false, error: error.message }
+    return { success: false, error }
   }
 
   revalidatePath('/leads')
@@ -729,17 +730,11 @@ export async function bulkDeleteLeads(leadIds: string[]) {
 }
 
 export async function bulkMarkReviewed(leadIds: string[], reviewed: boolean) {
-  const { error } = await supabase
-    .from('leads')
-    .update({
-      reviewed,
-      updated_at: new Date().toISOString()
-    })
-    .in('id', leadIds)
+  const { error } = await patchLeadsBulk(leadIds, { reviewed, updated_at: new Date().toISOString() })
 
   if (error) {
     console.error('Error bulk marking reviewed:', error)
-    return { success: false, error: error.message }
+    return { success: false, error }
   }
 
   revalidatePath('/leads')

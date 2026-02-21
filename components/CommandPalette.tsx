@@ -41,13 +41,13 @@ const navigationItems: NavigationItem[] = [
 ]
 
 const stageLabels: Record<string, { label: string; color: string; bg: string }> = {
-  new: { label: 'Neu', color: '#007AFF', bg: 'rgba(0, 122, 255, 0.1)' },
-  contacted: { label: 'Kontaktiert', color: '#FF9500', bg: 'rgba(255, 149, 0, 0.1)' },
-  qualified: { label: 'Qualifiziert', color: '#34C759', bg: 'rgba(52, 199, 89, 0.1)' },
-  proposal: { label: 'Angebot', color: '#AF52DE', bg: 'rgba(175, 82, 222, 0.1)' },
-  negotiation: { label: 'Verhandlung', color: '#5AC8FA', bg: 'rgba(90, 200, 250, 0.1)' },
-  won: { label: 'Gewonnen', color: '#34C759', bg: 'rgba(52, 199, 89, 0.15)' },
-  lost: { label: 'Verloren', color: '#FF3B30', bg: 'rgba(255, 59, 48, 0.1)' },
+  new: { label: 'Neu', color: '#4F46E5', bg: 'rgba(79, 70, 229, 0.1)' },
+  contacted: { label: 'Kontaktiert', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.1)' },
+  qualified: { label: 'Qualifiziert', color: '#10B981', bg: 'rgba(16, 185, 129, 0.1)' },
+  proposal: { label: 'Angebot', color: '#818CF8', bg: 'rgba(129, 140, 248, 0.1)' },
+  negotiation: { label: 'Verhandlung', color: '#60A5FA', bg: 'rgba(96, 165, 250, 0.1)' },
+  won: { label: 'Gewonnen', color: '#10B981', bg: 'rgba(16, 185, 129, 0.15)' },
+  lost: { label: 'Verloren', color: '#EF4444', bg: 'rgba(239, 68, 68, 0.1)' },
 }
 
 function getStageInfo(stage: string) {
@@ -399,7 +399,7 @@ export function CommandPalette() {
                       justifyContent: 'center',
                       background:
                         selectedIndex === index
-                          ? 'rgba(0, 122, 255, 0.1)'
+                          ? 'rgba(79, 70, 229, 0.1)'
                           : 'var(--color-bg-secondary)',
                       flexShrink: 0,
                       transition: 'background 0.1s ease',
@@ -487,7 +487,7 @@ export function CommandPalette() {
                         justifyContent: 'center',
                         background:
                           selectedIndex === index
-                            ? 'rgba(0, 122, 255, 0.1)'
+                            ? 'rgba(79, 70, 229, 0.1)'
                             : 'var(--color-bg-secondary)',
                         flexShrink: 0,
                         transition: 'background 0.1s ease',

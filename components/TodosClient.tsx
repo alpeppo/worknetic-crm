@@ -55,9 +55,9 @@ export function TodosClient({ todos }: TodosClientProps) {
 
   const getPriorityColor = (priority?: string) => {
     switch (priority) {
-      case 'high': return '#FF3B30'
-      case 'medium': return '#FF9500'
-      case 'low': return '#34C759'
+      case 'high': return '#EF4444'
+      case 'medium': return '#F59E0B'
+      case 'low': return '#10B981'
       default: return 'var(--color-text-tertiary)'
     }
   }
@@ -127,7 +127,7 @@ export function TodosClient({ todos }: TodosClientProps) {
                 padding: '8px 14px',
                 border: 'none',
                 borderRadius: '8px',
-                background: '#007AFF',
+                background: '#4F46E5',
                 fontSize: '13px',
                 color: 'white',
                 cursor: 'pointer',
@@ -156,7 +156,7 @@ export function TodosClient({ todos }: TodosClientProps) {
             cursor: 'pointer',
             transition: 'all 0.2s'
           }}
-          className="hover:border-[#007AFF] hover:text-[#007AFF]"
+          className="hover:border-[#4F46E5] hover:text-[#4F46E5]"
         >
           <Plus size={16} />
           Neue Aufgabe
@@ -260,7 +260,7 @@ export function TodosClient({ todos }: TodosClientProps) {
                         height: '22px',
                         borderRadius: '6px',
                         border: 'none',
-                        background: '#34C759',
+                        background: '#10B981',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',

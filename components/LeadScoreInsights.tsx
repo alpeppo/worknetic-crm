@@ -171,7 +171,7 @@ export function LeadScoreInsights({ lead, activityCount, lastActivityDate }: Lea
         label: 'Heisser Lead',
         icon: <Flame size={18} />,
         color: 'var(--color-red)',
-        bg: 'rgba(255, 59, 48, 0.10)',
+        bg: 'rgba(239, 68, 68, 0.10)',
       }
     }
 
@@ -180,7 +180,7 @@ export function LeadScoreInsights({ lead, activityCount, lastActivityDate }: Lea
         label: 'Warmer Lead',
         icon: <Sun size={18} />,
         color: 'var(--color-orange)',
-        bg: 'rgba(255, 149, 0, 0.10)',
+        bg: 'rgba(245, 158, 11, 0.10)',
       }
     }
 
@@ -188,7 +188,7 @@ export function LeadScoreInsights({ lead, activityCount, lastActivityDate }: Lea
       label: 'Kalter Lead',
       icon: <Snowflake size={18} />,
       color: 'var(--color-blue)',
-      bg: 'rgba(0, 122, 255, 0.10)',
+      bg: 'rgba(79, 70, 229, 0.10)',
     }
   }, [lead.lead_score, lastActivityDate])
 
@@ -504,12 +504,12 @@ export function LeadScoreInsights({ lead, activityCount, lastActivityDate }: Lea
                       color: rec.color,
                       background:
                         rec.color === 'var(--color-red)'
-                          ? 'rgba(255, 59, 48, 0.10)'
+                          ? 'rgba(239, 68, 68, 0.10)'
                           : rec.color === 'var(--color-orange)'
-                            ? 'rgba(255, 149, 0, 0.10)'
+                            ? 'rgba(245, 158, 11, 0.10)'
                             : rec.color === 'var(--color-blue)'
-                              ? 'rgba(0, 122, 255, 0.10)'
-                              : 'rgba(52, 199, 89, 0.10)',
+                              ? 'rgba(79, 70, 229, 0.10)'
+                              : 'rgba(16, 185, 129, 0.10)',
                     }}
                   >
                     {rec.icon}
@@ -557,9 +557,9 @@ export function LeadScoreInsights({ lead, activityCount, lastActivityDate }: Lea
                             : 'var(--color-text-tertiary)',
                       background:
                         rec.priority === 'high'
-                          ? 'rgba(255, 59, 48, 0.10)'
+                          ? 'rgba(239, 68, 68, 0.10)'
                           : rec.priority === 'medium'
-                            ? 'rgba(255, 149, 0, 0.10)'
+                            ? 'rgba(245, 158, 11, 0.10)'
                             : 'var(--color-bg-tertiary)',
                     }}
                   >
@@ -592,7 +592,7 @@ export function LeadScoreInsights({ lead, activityCount, lastActivityDate }: Lea
               width: '48px',
               height: '48px',
               margin: '0 auto 12px',
-              background: 'rgba(52, 199, 89, 0.10)',
+              background: 'rgba(16, 185, 129, 0.10)',
               borderRadius: '14px',
               display: 'flex',
               alignItems: 'center',

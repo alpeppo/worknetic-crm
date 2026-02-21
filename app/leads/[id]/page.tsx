@@ -77,6 +77,16 @@ export default async function LeadDetailPage({
     }
   }
 
+  const getActivityColor = (type: string) => {
+    switch (type) {
+      case 'call': return '#10B981'
+      case 'email_sent': case 'email_received': return '#4F46E5'
+      case 'meeting': return '#818CF8'
+      case 'note': return '#64748B'
+      default: return '#64748B'
+    }
+  }
+
   return (
     <>
       <Header
@@ -89,57 +99,78 @@ export default async function LeadDetailPage({
         {/* Back Link */}
         <Link
           href="/leads"
-          className="inline-flex items-center gap-2 mb-6 text-sm text-muted hover:text-primary transition-colors"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginBottom: '28px',
+            fontSize: '14px',
+            color: 'var(--color-text-tertiary)',
+            textDecoration: 'none',
+            transition: 'color 0.15s',
+          }}
+          className="hover:text-[var(--color-blue)]"
         >
           <ArrowLeft size={16} />
           Zurück zu Leads
         </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="detail-grid">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Lead Card */}
+          <div className="detail-main">
+            {/* Lead Card — Hero section */}
             <div className="card">
-              <div className="card-body">
-                <div className="flex items-start gap-6">
+              <div className="card-body" style={{ padding: '32px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '24px' }}>
                   {/* Avatar */}
                   <div
-                    className="w-20 h-20 rounded-xl flex items-center justify-center text-2xl font-bold text-white flex-shrink-0"
-                    style={{ background: 'linear-gradient(135deg, var(--brand-primary), #1a7fb3)' }}
+                    style={{
+                      width: '72px',
+                      height: '72px',
+                      borderRadius: '18px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '22px',
+                      fontWeight: 700,
+                      color: 'white',
+                      flexShrink: 0,
+                      background: 'linear-gradient(135deg, var(--color-indigo), var(--color-indigo-light))',
+                    }}
                   >
                     {initials}
                   </div>
 
                   {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h2 className="text-2xl font-bold text-primary mb-1">{lead.name}</h2>
-                        {lead.headline && (
-                          <p className="text-secondary mb-3">{lead.headline}</p>
-                        )}
-                        <div className="flex flex-wrap gap-2">
-                          {lead.company && (
-                            <span className="badge badge-default">
-                              <Building2 size={12} />
-                              {lead.company}
-                            </span>
-                          )}
-                          {lead.vertical && (
-                            <span className="badge badge-primary">
-                              {lead.vertical}
-                            </span>
-                          )}
-                          {lead.qualified && (
-                            <span className="badge badge-success">
-                              ✓ Qualifiziert
-                            </span>
-                          )}
-                          <span className="badge badge-default">
-                            {lead.stage}
-                          </span>
-                        </div>
-                      </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.02em', marginBottom: '6px' }}>
+                      {lead.name}
+                    </h2>
+                    {lead.headline && (
+                      <p style={{ fontSize: '15px', color: 'var(--color-text-secondary)', marginBottom: '16px', lineHeight: 1.5 }}>
+                        {lead.headline}
+                      </p>
+                    )}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {lead.company && (
+                        <span className="badge badge-default">
+                          <Building2 size={12} />
+                          {lead.company}
+                        </span>
+                      )}
+                      {lead.vertical && (
+                        <span className="badge badge-primary">
+                          {lead.vertical}
+                        </span>
+                      )}
+                      {lead.qualified && (
+                        <span className="badge badge-success">
+                          ✓ Qualifiziert
+                        </span>
+                      )}
+                      <span className="badge badge-default">
+                        {lead.stage}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -150,67 +181,53 @@ export default async function LeadDetailPage({
             <div className="card">
               <div className="card-header">
                 <h3 className="card-title">Lead Score</h3>
+                <div
+                  className={`score-color-${scoreClass}`}
+                  style={{ fontSize: '20px', fontWeight: 700 }}
+                >
+                  {score.toFixed(1)}/10
+                </div>
               </div>
               <div className="card-body">
-                <div className="grid grid-cols-4 gap-6 mb-6">
-                  {/* Total Score */}
-                  <div className="text-center">
-                    <div
-                      className="text-5xl font-bold mb-2"
-                      style={{
-                        color: scoreClass === 'high' ? 'var(--success)' :
-                               scoreClass === 'medium' ? 'var(--warning)' : 'var(--text-muted)'
-                      }}
-                    >
-                      {score.toFixed(1)}
-                    </div>
-                    <div className="text-sm text-muted">Gesamt</div>
-                    <div className="w-full h-2 bg-[var(--bg-tertiary)] rounded-full mt-2">
-                      <div
-                        className={`h-full rounded-full score-fill ${scoreClass}`}
-                        style={{ width: `${(score / 10) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '24px' }}>
                   {/* Pain Score */}
-                  <div className="text-center">
-                    <div className="text-4xl font-bold mb-2 text-danger">
+                  <div style={{ textAlign: 'center' }}>
+                    <div className="score-color-red" style={{ fontSize: '32px', fontWeight: 700, marginBottom: '6px' }}>
                       {lead.pain_score || 0}
                     </div>
-                    <div className="text-sm text-muted">Pain /4</div>
-                    <div className="w-full h-2 bg-[var(--bg-tertiary)] rounded-full mt-2">
+                    <div style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', fontWeight: 500, marginBottom: '10px' }}>Pain /4</div>
+                    <div style={{ width: '100%', height: '6px', background: 'var(--color-bg-tertiary)', borderRadius: '100px' }}>
                       <div
-                        className="h-full rounded-full bg-[var(--danger)]"
-                        style={{ width: `${((lead.pain_score || 0) / 4) * 100}%` }}
+                        className="bg-score-red"
+                        style={{ height: '100%', borderRadius: '100px', width: `${((lead.pain_score || 0) / 4) * 100}%`, transition: 'width 0.4s ease' }}
                       />
                     </div>
                   </div>
 
                   {/* Fit Score */}
-                  <div className="text-center">
-                    <div className="text-4xl font-bold mb-2 text-success">
+                  <div style={{ textAlign: 'center' }}>
+                    <div className="score-color-high" style={{ fontSize: '32px', fontWeight: 700, marginBottom: '6px' }}>
                       {lead.fit_score || 0}
                     </div>
-                    <div className="text-sm text-muted">Fit /3</div>
-                    <div className="w-full h-2 bg-[var(--bg-tertiary)] rounded-full mt-2">
+                    <div style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', fontWeight: 500, marginBottom: '10px' }}>Fit /3</div>
+                    <div style={{ width: '100%', height: '6px', background: 'var(--color-bg-tertiary)', borderRadius: '100px' }}>
                       <div
-                        className="h-full rounded-full bg-[var(--success)]"
-                        style={{ width: `${((lead.fit_score || 0) / 3) * 100}%` }}
+                        className="bg-score-high"
+                        style={{ height: '100%', borderRadius: '100px', width: `${((lead.fit_score || 0) / 3) * 100}%`, transition: 'width 0.4s ease' }}
                       />
                     </div>
                   </div>
 
                   {/* Buying Score */}
-                  <div className="text-center">
-                    <div className="text-4xl font-bold mb-2" style={{ color: '#8b5cf6' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div className="score-color-purple" style={{ fontSize: '32px', fontWeight: 700, marginBottom: '6px' }}>
                       {lead.buying_score || 0}
                     </div>
-                    <div className="text-sm text-muted">Buying /3</div>
-                    <div className="w-full h-2 bg-[var(--bg-tertiary)] rounded-full mt-2">
+                    <div style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', fontWeight: 500, marginBottom: '10px' }}>Buying /3</div>
+                    <div style={{ width: '100%', height: '6px', background: 'var(--color-bg-tertiary)', borderRadius: '100px' }}>
                       <div
-                        className="h-full rounded-full"
-                        style={{ background: '#8b5cf6', width: `${((lead.buying_score || 0) / 3) * 100}%` }}
+                        className="bg-score-purple"
+                        style={{ height: '100%', borderRadius: '100px', width: `${((lead.buying_score || 0) / 3) * 100}%`, transition: 'width 0.4s ease' }}
                       />
                     </div>
                   </div>
@@ -218,52 +235,54 @@ export default async function LeadDetailPage({
 
                 {/* Score Notes */}
                 {scoreNotes && Object.keys(scoreNotes).length > 0 && (
-                  <div className="border-t border-[var(--border-light)] pt-6 space-y-4">
-                    {scoreNotes.pain_signals && scoreNotes.pain_signals.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-semibold text-danger mb-2 flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-[var(--danger)]" />
-                          Pain Signals
-                        </h4>
-                        <ul className="space-y-1">
-                          {scoreNotes.pain_signals.map((signal: string, i: number) => (
-                            <li key={i} className="text-sm text-secondary pl-4">
-                              • {signal}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {scoreNotes.fit_signals && scoreNotes.fit_signals.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-semibold text-success mb-2 flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-[var(--success)]" />
-                          Fit Signals
-                        </h4>
-                        <ul className="space-y-1">
-                          {scoreNotes.fit_signals.map((signal: string, i: number) => (
-                            <li key={i} className="text-sm text-secondary pl-4">
-                              • {signal}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {scoreNotes.buying_power && scoreNotes.buying_power.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: '#8b5cf6' }}>
-                          <span className="w-2 h-2 rounded-full" style={{ background: '#8b5cf6' }} />
-                          Buying Power
-                        </h4>
-                        <ul className="space-y-1">
-                          {scoreNotes.buying_power.map((signal: string, i: number) => (
-                            <li key={i} className="text-sm text-secondary pl-4">
-                              • {signal}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                  <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '28px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                      {scoreNotes.pain_signals && scoreNotes.pain_signals.length > 0 && (
+                        <div>
+                          <h4 className="score-color-red" style={{ fontSize: '13px', fontWeight: 600, marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--color-red)' }} />
+                            Pain Signals
+                          </h4>
+                          <ul style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            {scoreNotes.pain_signals.map((signal: string, i: number) => (
+                              <li key={i} style={{ fontSize: '14px', color: 'var(--color-text-secondary)', paddingLeft: '20px' }}>
+                                • {signal}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {scoreNotes.fit_signals && scoreNotes.fit_signals.length > 0 && (
+                        <div>
+                          <h4 className="score-color-high" style={{ fontSize: '13px', fontWeight: 600, marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--color-green)' }} />
+                            Fit Signals
+                          </h4>
+                          <ul style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            {scoreNotes.fit_signals.map((signal: string, i: number) => (
+                              <li key={i} style={{ fontSize: '14px', color: 'var(--color-text-secondary)', paddingLeft: '20px' }}>
+                                • {signal}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {scoreNotes.buying_power && scoreNotes.buying_power.length > 0 && (
+                        <div>
+                          <h4 className="score-color-purple" style={{ fontSize: '13px', fontWeight: 600, marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#818CF8' }} />
+                            Buying Power
+                          </h4>
+                          <ul style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            {scoreNotes.buying_power.map((signal: string, i: number) => (
+                              <li key={i} style={{ fontSize: '14px', color: 'var(--color-text-secondary)', paddingLeft: '20px' }}>
+                                • {signal}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -282,42 +301,49 @@ export default async function LeadDetailPage({
               </div>
               <div className="card-body">
                 {timelineActivities.length > 0 ? (
-                  <div className="space-y-4">
-                    {timelineActivities.map((activity) => (
-                      <div
-                        key={activity.id}
-                        className="flex gap-4 pb-4 border-b border-[var(--border-light)] last:border-0 last:pb-0"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center text-muted flex-shrink-0">
-                          {getActivityIcon(activity.type)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="badge badge-default text-xs">{activity.type}</span>
-                            <span className="text-xs text-muted">
-                              {new Date(activity.created_at).toLocaleDateString('de-DE', {
-                                day: '2-digit',
-                                month: 'short',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </span>
+                  <div>
+                    {timelineActivities.map((activity) => {
+                      const color = getActivityColor(activity.type)
+                      return (
+                        <div key={activity.id} className="timeline-item">
+                          <div
+                            className="timeline-icon"
+                            style={{ background: `${color}12`, color }}
+                          >
+                            {getActivityIcon(activity.type)}
                           </div>
-                          <p className="text-sm font-medium">{activity.subject || activity.type}</p>
-                          {activity.body && (
-                            <p className="text-sm text-secondary mt-1">{activity.body}</p>
-                          )}
+                          <div className="timeline-content">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="badge badge-default" style={{ fontSize: '12px' }}>{activity.type}</span>
+                              <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>
+                                {new Date(activity.created_at).toLocaleDateString('de-DE', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </span>
+                            </div>
+                            <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text)' }}>
+                              {activity.subject || activity.type}
+                            </p>
+                            {activity.body && (
+                              <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginTop: '6px', lineHeight: 1.6 }}>
+                                {activity.body}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <div className="w-12 h-12 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center mx-auto mb-3">
-                      <Clock size={20} className="text-muted" />
+                  <div className="empty-state" style={{ padding: '48px 24px' }}>
+                    <div className="empty-state-icon">
+                      <Clock size={24} />
                     </div>
-                    <p className="text-muted">Noch keine Aktivitäten</p>
+                    <div className="empty-state-title">Noch keine Aktivitäten</div>
                   </div>
                 )}
               </div>
@@ -325,28 +351,22 @@ export default async function LeadDetailPage({
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="detail-sidebar">
             {/* Contact Info */}
             <div className="card">
               <div className="card-header">
                 <h3 className="card-title">Kontakt</h3>
               </div>
-              <div className="card-body space-y-4">
+              <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: '20px 24px' }}>
                 {lead.email && (
-                  <a
-                    href={`mailto:${lead.email}`}
-                    className="flex items-center gap-3 text-sm hover:text-[var(--brand-primary)] transition-colors"
-                  >
-                    <Mail size={18} className="text-muted" />
+                  <a href={`mailto:${lead.email}`} className="contact-link">
+                    <Mail size={18} />
                     <span className="truncate">{lead.email}</span>
                   </a>
                 )}
                 {lead.phone && (
-                  <a
-                    href={`tel:${lead.phone}`}
-                    className="flex items-center gap-3 text-sm hover:text-[var(--brand-primary)] transition-colors"
-                  >
-                    <Phone size={18} className="text-muted" />
+                  <a href={`tel:${lead.phone}`} className="contact-link">
+                    <Phone size={18} />
                     <span>{lead.phone}</span>
                   </a>
                 )}
@@ -355,9 +375,9 @@ export default async function LeadDetailPage({
                     href={lead.linkedin_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-3 text-sm hover:text-[var(--brand-primary)] transition-colors"
+                    className="contact-link"
                   >
-                    <Linkedin size={18} className="text-muted" />
+                    <Linkedin size={18} />
                     <span>LinkedIn Profil</span>
                   </a>
                 )}
@@ -366,21 +386,21 @@ export default async function LeadDetailPage({
                     href={lead.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-3 text-sm hover:text-[var(--brand-primary)] transition-colors"
+                    className="contact-link"
                   >
-                    <Globe size={18} className="text-muted" />
+                    <Globe size={18} />
                     <span className="truncate">{lead.website}</span>
                   </a>
                 )}
                 {lead.location && (
-                  <div className="flex items-center gap-3 text-sm text-secondary">
-                    <MapPin size={18} className="text-muted" />
+                  <div className="contact-link" style={{ cursor: 'default' }}>
+                    <MapPin size={18} />
                     <span>{lead.location}</span>
                   </div>
                 )}
                 {lead.connections !== null && (
-                  <div className="flex items-center gap-3 text-sm text-secondary">
-                    <Users size={18} className="text-muted" />
+                  <div className="contact-link" style={{ cursor: 'default' }}>
+                    <Users size={18} />
                     <span>{lead.connections?.toLocaleString()} Connections</span>
                   </div>
                 )}
@@ -392,22 +412,22 @@ export default async function LeadDetailPage({
               <div className="card-header">
                 <h3 className="card-title">Pipeline</h3>
               </div>
-              <div className="card-body space-y-4">
-                <div>
-                  <div className="text-xs text-muted mb-1">Stage</div>
+              <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '20px 24px' }}>
+                <div className="pipeline-info-item">
+                  <div className="pipeline-info-label">Stage</div>
                   <span className="badge badge-primary">{lead.stage}</span>
                 </div>
-                <div>
-                  <div className="text-xs text-muted mb-1">Vertical</div>
-                  <span className="text-sm font-medium">{lead.vertical || '–'}</span>
+                <div className="pipeline-info-item">
+                  <div className="pipeline-info-label">Vertical</div>
+                  <span className="pipeline-info-value">{lead.vertical || '–'}</span>
                 </div>
-                <div>
-                  <div className="text-xs text-muted mb-1">Source</div>
-                  <span className="text-sm font-medium">{lead.source || '–'}</span>
+                <div className="pipeline-info-item">
+                  <div className="pipeline-info-label">Source</div>
+                  <span className="pipeline-info-value">{lead.source || '–'}</span>
                 </div>
-                <div>
-                  <div className="text-xs text-muted mb-1">Erstellt am</div>
-                  <span className="text-sm font-medium">
+                <div className="pipeline-info-item">
+                  <div className="pipeline-info-label">Erstellt am</div>
+                  <span className="pipeline-info-value">
                     {new Date(lead.created_at).toLocaleDateString('de-DE', {
                       day: '2-digit',
                       month: 'long',
@@ -416,9 +436,9 @@ export default async function LeadDetailPage({
                   </span>
                 </div>
                 {lead.deal_value && (
-                  <div>
-                    <div className="text-xs text-muted mb-1">Deal Value</div>
-                    <span className="text-sm font-bold text-success">
+                  <div className="pipeline-info-item" style={{ paddingTop: '12px', borderTop: '1px solid var(--color-border)' }}>
+                    <div className="pipeline-info-label">Deal Value</div>
+                    <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-green)' }}>
                       €{lead.deal_value.toLocaleString()}
                     </span>
                   </div>

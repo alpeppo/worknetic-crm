@@ -109,19 +109,27 @@ export function ActivitiesClient({
 
   const getActivityColor = (type: string) => {
     switch (type) {
-      case 'call': return '#10b981'
-      case 'email_sent': return '#3b82f6'
-      case 'email_received': return '#3b82f6'
-      case 'meeting': return '#8b5cf6'
-      case 'note': return '#6b7280'
+      case 'call': return '#10B981'
+      case 'email_sent': return '#4F46E5'
+      case 'email_received': return '#4F46E5'
+      case 'meeting': return '#818CF8'
+      case 'note': return '#64748B'
       case 'linkedin_message': return '#0077b5'
-      case 'video_call': return '#FF9500'
+      case 'video_call': return '#F59E0B'
       case 'whatsapp': return '#25D366'
-      case 'sms': return '#5AC8FA'
-      case 'stage_change': return '#f59e0b'
-      case 'score_update': return '#ef4444'
-      default: return '#6b7280'
+      case 'sms': return '#60A5FA'
+      case 'stage_change': return '#F59E0B'
+      case 'score_update': return '#EF4444'
+      default: return '#64748B'
     }
+  }
+
+  const getTypeLabel = (type: string) => {
+    const found = ACTIVITY_TYPES.find(t => t.value === type)
+    if (found) return found.label
+    if (type === 'stage_change') return 'Stage'
+    if (type === 'score_update') return 'Score'
+    return type
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -166,137 +174,141 @@ export function ActivitiesClient({
         Aktivität hinzufügen
       </button>
 
-      {/* Type Stats */}
-      <div className="card mb-6">
-        <div className="card-body">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-2">
-              <Clock size={18} className="text-muted" />
-              <span className="font-semibold">{activities.length} Aktivitäten</span>
-              <span className="text-muted text-sm">(letzte 50)</span>
+      {/* Übersicht */}
+      <div className="section-card" style={{ marginBottom: '32px', marginTop: '28px' }}>
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--color-border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="stat-icon stat-icon-blue" style={{ width: '36px', height: '36px', borderRadius: '10px' }}>
+              <Clock size={18} />
             </div>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(typeCount).map(([type, count]) => (
-                <div
+            <div>
+              <span style={{ fontSize: '17px', fontWeight: 600, color: 'var(--color-text)' }}>{activities.length}</span>
+              <span style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', marginLeft: '6px' }}>Aktivitäten gesamt</span>
+            </div>
+          </div>
+        </div>
+        <div style={{ padding: '16px 24px' }}>
+          <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Nach Typ filtern</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            <button
+              onClick={() => setFilter(null)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 14px',
+                borderRadius: '100px',
+                border: filter === null ? '1px solid var(--color-interactive)' : '1px solid var(--color-border)',
+                background: filter === null ? 'rgba(79, 70, 229, 0.08)' : 'transparent',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+                fontSize: '13px',
+                fontWeight: 500,
+                color: filter === null ? 'var(--color-interactive)' : 'var(--color-text-secondary)',
+              }}
+            >
+              Alle
+            </button>
+            {Object.entries(typeCount).map(([type, count]) => {
+              const color = getActivityColor(type)
+              const isActive = filter === type
+              return (
+                <button
                   key={type}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-pointer hover:opacity-80"
-                  style={{ background: `${getActivityColor(type)}15` }}
                   onClick={() => setFilter(filter === type ? null : type)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px 14px',
+                    borderRadius: '100px',
+                    border: isActive ? `1px solid ${color}` : '1px solid var(--color-border)',
+                    background: isActive ? `${color}12` : 'transparent',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    color: isActive ? color : 'var(--color-text-secondary)',
+                  }}
                 >
-                  <span style={{ color: getActivityColor(type) }}>
-                    {getActivityIcon(type)}
-                  </span>
-                  <span className="text-sm font-medium">{String(count)}</span>
-                </div>
-              ))}
-            </div>
+                  <span style={{ color, display: 'flex', alignItems: 'center' }}>{getActivityIcon(type)}</span>
+                  <span>{getTypeLabel(type)}</span>
+                  <span style={{ fontSize: '12px', opacity: 0.7 }}>{String(count)}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="filters-bar">
-        <button
-          className={`filter-btn ${filter === null ? 'active' : ''}`}
-          onClick={() => setFilter(null)}
-        >
-          Alle
-        </button>
-        <button
-          className={`filter-btn ${filter === 'call' ? 'active' : ''}`}
-          onClick={() => setFilter(filter === 'call' ? null : 'call')}
-        >
-          <Phone size={14} />
-          Calls
-        </button>
-        <button
-          className={`filter-btn ${filter === 'email_sent' || filter === 'email_received' ? 'active' : ''}`}
-          onClick={() => setFilter(filter === 'email_sent' ? null : 'email_sent')}
-        >
-          <Mail size={14} />
-          E-Mails
-        </button>
-        <button
-          className={`filter-btn ${filter === 'meeting' ? 'active' : ''}`}
-          onClick={() => setFilter(filter === 'meeting' ? null : 'meeting')}
-        >
-          <CalendarCheck size={14} />
-          Meetings
-        </button>
-        <button
-          className={`filter-btn ${filter === 'note' ? 'active' : ''}`}
-          onClick={() => setFilter(filter === 'note' ? null : 'note')}
-        >
-          <MessageSquare size={14} />
-          Notizen
-        </button>
-        <button
-          className={`filter-btn ${filter === 'video_call' ? 'active' : ''}`}
-          onClick={() => setFilter(filter === 'video_call' ? null : 'video_call')}
-        >
-          <Video size={14} />
-          Video
-        </button>
-        <button
-          className={`filter-btn ${filter === 'whatsapp' ? 'active' : ''}`}
-          onClick={() => setFilter(filter === 'whatsapp' ? null : 'whatsapp')}
-        >
-          <MessageCircle size={14} />
-          WhatsApp
-        </button>
-        <button
-          className={`filter-btn ${filter === 'sms' ? 'active' : ''}`}
-          onClick={() => setFilter(filter === 'sms' ? null : 'sms')}
-        >
-          <Smartphone size={14} />
-          SMS
-        </button>
-      </div>
-
       {/* Timeline */}
       {filteredActivities.length > 0 ? (
-        <div className="space-y-8">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '44px' }}>
           {Object.entries(filteredGrouped).map(([date, dayActivities]) => (
             <div key={date}>
-              <div className="flex items-center gap-4 mb-4">
-                <div className="text-sm font-semibold text-muted">{date}</div>
-                <div className="flex-1 h-px bg-[var(--border-light)]" />
+              {/* Date Header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-tertiary)', whiteSpace: 'nowrap' }}>{date}</span>
+                <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }} />
               </div>
 
-              <div className="space-y-3">
+              {/* Day Activities */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {dayActivities.map((activity) => {
                   const lead = activity.lead_id ? leadMap.get(activity.lead_id) : null
                   const color = getActivityColor(activity.type)
 
                   return (
-                    <div key={activity.id} className="card">
-                      <div className="card-body py-4">
-                        <div className="flex items-start gap-4">
+                    <div
+                      key={activity.id}
+                      className="section-card"
+                      style={{ transition: 'all 0.2s' }}
+                    >
+                      <div style={{ padding: '20px 24px' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                          {/* Icon */}
                           <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                            style={{ background: `${color}15`, color }}
+                            style={{
+                              width: '44px',
+                              height: '44px',
+                              borderRadius: '14px',
+                              background: `${color}12`,
+                              color,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                            }}
                           >
                             {getActivityIcon(activity.type)}
                           </div>
 
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-4">
-                              <div>
-                                <div className="flex items-center gap-2 mb-1">
+                          {/* Content */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                {/* Type badge + Lead */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                                   <span
-                                    className="badge text-xs"
+                                    className="badge"
                                     style={{
-                                      background: `${color}15`,
+                                      background: `${color}12`,
                                       color,
-                                      border: `1px solid ${color}30`
+                                      fontSize: '12px',
                                     }}
                                   >
-                                    {activity.type}
+                                    {getTypeLabel(activity.type)}
                                   </span>
                                   {lead && (
                                     <Link
                                       href={`/leads/${activity.lead_id}`}
-                                      className="text-sm text-muted hover:text-[var(--brand-primary)] transition-colors"
+                                      style={{
+                                        fontSize: '13px',
+                                        color: 'var(--color-text-tertiary)',
+                                        textDecoration: 'none',
+                                        transition: 'color 0.15s',
+                                      }}
+                                      className="hover:text-[var(--color-blue)]"
                                     >
                                       {lead.name}
                                       {lead.company && ` · ${lead.company}`}
@@ -304,27 +316,34 @@ export function ActivitiesClient({
                                   )}
                                 </div>
 
+                                {/* Subject */}
                                 {activity.subject && (
-                                  <h4 className="font-semibold mb-1">{activity.subject}</h4>
+                                  <h4 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--color-text)', marginBottom: activity.body ? '6px' : 0 }}>
+                                    {activity.subject}
+                                  </h4>
                                 )}
 
+                                {/* Body */}
                                 {activity.body && (
-                                  <p className="text-sm text-secondary">{activity.body}</p>
+                                  <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+                                    {activity.body}
+                                  </p>
                                 )}
                               </div>
 
-                              <div className="text-xs text-muted whitespace-nowrap">
+                              {/* Time */}
+                              <span style={{ fontSize: '13px', color: 'var(--color-text-tertiary)', whiteSpace: 'nowrap', flexShrink: 0, paddingTop: '2px' }}>
                                 {new Date(activity.created_at).toLocaleTimeString('de-DE', {
                                   hour: '2-digit',
                                   minute: '2-digit'
                                 })}
-                              </div>
+                              </span>
                             </div>
 
                             {activity.created_by && (
-                              <div className="mt-2 text-xs text-muted">
+                              <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginTop: '8px' }}>
                                 von {activity.created_by}
-                              </div>
+                              </p>
                             )}
                           </div>
                         </div>
@@ -337,7 +356,7 @@ export function ActivitiesClient({
           ))}
         </div>
       ) : (
-        <div className="card">
+        <div className="section-card">
           <div className="empty-state">
             <div className="empty-state-icon">
               <Clock size={24} />
@@ -365,7 +384,14 @@ export function ActivitiesClient({
       >
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
-            <div className="p-3 bg-[var(--danger-bg)] text-[var(--danger)] text-sm rounded-lg">
+            <div style={{
+              padding: '12px 16px',
+              background: 'rgba(239, 68, 68, 0.08)',
+              color: '#EF4444',
+              fontSize: '14px',
+              borderRadius: '12px',
+              border: '1px solid rgba(239, 68, 68, 0.15)'
+            }}>
               {error}
             </div>
           )}
@@ -395,17 +421,22 @@ export function ActivitiesClient({
               {ACTIVITY_TYPES.map((type) => {
                 const Icon = type.icon
                 const isSelected = selectedType === type.value
+                const typeColor = getActivityColor(type.value)
 
                 return (
                   <label
                     key={type.value}
-                    className={`
-                      flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all
-                      ${isSelected
-                        ? 'border-[var(--brand-primary)] bg-[rgba(33,153,213,0.05)]'
-                        : 'border-[var(--border-light)] hover:border-[var(--border-medium)]'
-                      }
-                    `}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '10px 12px',
+                      borderRadius: '12px',
+                      border: isSelected ? `1px solid ${typeColor}` : '1px solid var(--color-border)',
+                      background: isSelected ? `${typeColor}08` : 'transparent',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s',
+                    }}
                   >
                     <input
                       type="radio"
@@ -415,8 +446,8 @@ export function ActivitiesClient({
                       onChange={(e) => setSelectedType(e.target.value)}
                       className="sr-only"
                     />
-                    <Icon size={16} className={isSelected ? 'text-[var(--brand-primary)]' : 'text-muted'} />
-                    <span className={`text-sm ${isSelected ? 'font-medium' : ''}`}>{type.label}</span>
+                    <Icon size={16} style={{ color: isSelected ? typeColor : 'var(--color-text-tertiary)' }} />
+                    <span style={{ fontSize: '13px', fontWeight: isSelected ? 500 : 400, color: isSelected ? 'var(--color-text)' : 'var(--color-text-secondary)' }}>{type.label}</span>
                   </label>
                 )
               })}
@@ -449,7 +480,7 @@ export function ActivitiesClient({
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-[var(--border-light)]">
+          <div className="flex justify-end gap-3 pt-5 mt-1">
             <button
               type="button"
               className="btn btn-secondary"

@@ -231,12 +231,12 @@ export function CSVImport({ onSuccess, onCancel }: CSVImportProps) {
             alignItems: 'center',
             gap: '10px',
             padding: '14px 18px',
-            background: 'rgba(255, 59, 48, 0.08)',
-            border: '1px solid rgba(255, 59, 48, 0.2)',
+            background: 'rgba(239, 68, 68, 0.08)',
+            border: '1px solid rgba(239, 68, 68, 0.2)',
             borderRadius: '14px',
             marginBottom: '20px',
             fontSize: '14px',
-            color: '#FF3B30'
+            color: '#EF4444'
           }}>
             <AlertCircle size={18} />
             {error}
@@ -255,9 +255,9 @@ export function CSVImport({ onSuccess, onCancel }: CSVImportProps) {
             justifyContent: 'center',
             gap: '16px',
             padding: '48px 32px',
-            border: `2px dashed ${isDragOver ? '#007AFF' : 'var(--color-border)'}`,
+            border: `2px dashed ${isDragOver ? '#4F46E5' : 'var(--color-border)'}`,
             borderRadius: '20px',
-            background: isDragOver ? 'rgba(0, 122, 255, 0.04)' : 'var(--color-bg-secondary)',
+            background: isDragOver ? 'rgba(79, 70, 229, 0.04)' : 'var(--color-bg-secondary)',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
           }}
@@ -269,10 +269,10 @@ export function CSVImport({ onSuccess, onCancel }: CSVImportProps) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: isDragOver ? 'rgba(0, 122, 255, 0.12)' : 'rgba(0, 122, 255, 0.08)',
+            background: isDragOver ? 'rgba(79, 70, 229, 0.12)' : 'rgba(79, 70, 229, 0.08)',
             transition: 'all 0.2s ease',
           }}>
-            <Upload size={28} style={{ color: '#007AFF' }} />
+            <Upload size={28} style={{ color: '#4F46E5' }} />
           </div>
           <div style={{ textAlign: 'center' }}>
             <p style={{
@@ -335,12 +335,12 @@ export function CSVImport({ onSuccess, onCancel }: CSVImportProps) {
             alignItems: 'center',
             gap: '10px',
             padding: '14px 18px',
-            background: 'rgba(255, 59, 48, 0.08)',
-            border: '1px solid rgba(255, 59, 48, 0.2)',
+            background: 'rgba(239, 68, 68, 0.08)',
+            border: '1px solid rgba(239, 68, 68, 0.2)',
             borderRadius: '14px',
             marginBottom: '20px',
             fontSize: '14px',
-            color: '#FF3B30'
+            color: '#EF4444'
           }}>
             <AlertCircle size={18} />
             {error}
@@ -364,9 +364,9 @@ export function CSVImport({ onSuccess, onCancel }: CSVImportProps) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'rgba(52, 199, 89, 0.1)',
+            background: 'rgba(16, 185, 129, 0.1)',
           }}>
-            <FileSpreadsheet size={22} style={{ color: '#34C759' }} />
+            <FileSpreadsheet size={22} style={{ color: '#10B981' }} />
           </div>
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text)' }}>{fileName}</p>
@@ -453,7 +453,7 @@ export function CSVImport({ onSuccess, onCancel }: CSVImportProps) {
                 alignItems: 'center',
                 padding: '12px 20px',
                 borderBottom: idx < headers.length - 1 ? '1px solid var(--color-border)' : 'none',
-                background: mapping[header] ? 'rgba(0, 122, 255, 0.02)' : 'var(--color-bg)',
+                background: mapping[header] ? 'rgba(79, 70, 229, 0.02)' : 'var(--color-bg)',
                 transition: 'background 0.15s',
               }}
             >
@@ -480,7 +480,7 @@ export function CSVImport({ onSuccess, onCancel }: CSVImportProps) {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <ArrowRight size={16} style={{ color: mapping[header] ? '#007AFF' : 'var(--color-text-tertiary)', opacity: mapping[header] ? 1 : 0.4 }} />
+                <ArrowRight size={16} style={{ color: mapping[header] ? '#4F46E5' : 'var(--color-text-tertiary)', opacity: mapping[header] ? 1 : 0.4 }} />
               </div>
 
               <select
@@ -491,7 +491,7 @@ export function CSVImport({ onSuccess, onCancel }: CSVImportProps) {
                   padding: '8px 12px',
                   fontSize: '14px',
                   borderRadius: '10px',
-                  borderColor: mapping[header] === 'name' ? '#34C759' : undefined,
+                  borderColor: mapping[header] === 'name' ? '#10B981' : undefined,
                 }}
               >
                 <option value="">-- Nicht importieren --</option>
@@ -602,12 +602,12 @@ export function CSVImport({ onSuccess, onCancel }: CSVImportProps) {
             alignItems: 'center',
             gap: '10px',
             padding: '14px 18px',
-            background: 'rgba(255, 149, 0, 0.08)',
-            border: '1px solid rgba(255, 149, 0, 0.2)',
+            background: 'rgba(245, 158, 11, 0.08)',
+            border: '1px solid rgba(245, 158, 11, 0.2)',
             borderRadius: '14px',
             marginBottom: '20px',
             fontSize: '14px',
-            color: '#FF9500'
+            color: '#F59E0B'
           }}>
             <AlertCircle size={18} />
             Bitte ordne mindestens die Spalte &quot;Name&quot; zu.
@@ -667,9 +667,9 @@ export function CSVImport({ onSuccess, onCancel }: CSVImportProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'rgba(0, 122, 255, 0.08)',
+          background: 'rgba(79, 70, 229, 0.08)',
         }}>
-          <Loader2 size={28} style={{ color: '#007AFF', animation: 'spin 1s linear infinite' }} />
+          <Loader2 size={28} style={{ color: '#4F46E5', animation: 'spin 1s linear infinite' }} />
         </div>
         <div style={{ textAlign: 'center' }}>
           <p style={{
@@ -717,9 +717,9 @@ export function CSVImport({ onSuccess, onCancel }: CSVImportProps) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: 'rgba(52, 199, 89, 0.1)',
+              background: 'rgba(16, 185, 129, 0.1)',
             }}>
-              <Check size={36} style={{ color: '#34C759' }} />
+              <Check size={36} style={{ color: '#10B981' }} />
             </div>
             <div style={{ textAlign: 'center' }}>
               <p style={{
@@ -763,9 +763,9 @@ export function CSVImport({ onSuccess, onCancel }: CSVImportProps) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: 'rgba(255, 59, 48, 0.1)',
+              background: 'rgba(239, 68, 68, 0.1)',
             }}>
-              <AlertCircle size={36} style={{ color: '#FF3B30' }} />
+              <AlertCircle size={36} style={{ color: '#EF4444' }} />
             </div>
             <div style={{ textAlign: 'center' }}>
               <p style={{

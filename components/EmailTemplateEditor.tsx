@@ -10,11 +10,11 @@ interface EmailTemplateEditorProps {
 }
 
 const CATEGORIES: Record<string, { label: string; color: string; bgColor: string }> = {
-  outreach: { label: 'Erstansprache', color: '#007AFF', bgColor: 'rgba(0, 122, 255, 0.1)' },
-  follow_up: { label: 'Follow-up', color: '#FF9500', bgColor: 'rgba(255, 149, 0, 0.1)' },
-  proposal: { label: 'Angebot', color: '#34C759', bgColor: 'rgba(52, 199, 89, 0.1)' },
-  meeting: { label: 'Meeting', color: '#AF52DE', bgColor: 'rgba(175, 82, 222, 0.1)' },
-  general: { label: 'Allgemein', color: '#86868b', bgColor: 'rgba(134, 134, 139, 0.1)' },
+  outreach: { label: 'Erstansprache', color: '#4F46E5', bgColor: 'rgba(79, 70, 229, 0.1)' },
+  follow_up: { label: 'Follow-up', color: '#F59E0B', bgColor: 'rgba(245, 158, 11, 0.1)' },
+  proposal: { label: 'Angebot', color: '#10B981', bgColor: 'rgba(16, 185, 129, 0.1)' },
+  meeting: { label: 'Meeting', color: '#818CF8', bgColor: 'rgba(129, 140, 248, 0.1)' },
+  general: { label: 'Allgemein', color: '#64748B', bgColor: 'rgba(100, 116, 139, 0.1)' },
 }
 
 const VERTICALS = [
@@ -42,8 +42,8 @@ function highlightVariables(text: string): React.ReactNode[] {
             display: 'inline',
             padding: '2px 8px',
             borderRadius: '6px',
-            background: 'rgba(0, 122, 255, 0.1)',
-            color: '#007AFF',
+            background: 'rgba(79, 70, 229, 0.1)',
+            color: '#4F46E5',
             fontWeight: 600,
             fontSize: '13px',
           }}
@@ -228,7 +228,7 @@ export function EmailTemplateEditor({ templates }: EmailTemplateEditorProps) {
             alignItems: 'center',
             gap: '8px',
             padding: '10px 18px',
-            background: '#007AFF',
+            background: '#4F46E5',
             border: 'none',
             borderRadius: '12px',
             fontSize: '14px',
@@ -236,7 +236,7 @@ export function EmailTemplateEditor({ templates }: EmailTemplateEditorProps) {
             color: 'white',
             cursor: 'pointer',
             transition: 'all 0.2s',
-            boxShadow: '0 2px 8px rgba(0, 122, 255, 0.25)',
+            boxShadow: '0 2px 8px rgba(79, 70, 229, 0.25)',
           }}
         >
           <Plus size={16} />
@@ -251,11 +251,11 @@ export function EmailTemplateEditor({ templates }: EmailTemplateEditorProps) {
           style={{
             padding: '8px 16px',
             borderRadius: '100px',
-            border: filterCategory === 'all' ? '1px solid #007AFF' : '1px solid var(--color-border)',
-            background: filterCategory === 'all' ? 'rgba(0, 122, 255, 0.08)' : 'var(--color-bg)',
+            border: filterCategory === 'all' ? '1px solid #4F46E5' : '1px solid var(--color-border)',
+            background: filterCategory === 'all' ? 'rgba(79, 70, 229, 0.08)' : 'var(--color-bg)',
             fontSize: '13px',
             fontWeight: 500,
-            color: filterCategory === 'all' ? '#007AFF' : 'var(--color-text-secondary)',
+            color: filterCategory === 'all' ? '#4F46E5' : 'var(--color-text-secondary)',
             cursor: 'pointer',
             transition: 'all 0.2s',
           }}
@@ -327,8 +327,8 @@ export function EmailTemplateEditor({ templates }: EmailTemplateEditorProps) {
               style={{
                 padding: '12px 16px',
                 borderRadius: '12px',
-                background: 'rgba(255, 59, 48, 0.08)',
-                color: '#FF3B30',
+                background: 'rgba(239, 68, 68, 0.08)',
+                color: '#EF4444',
                 fontSize: '14px',
                 marginBottom: '20px',
               }}
@@ -422,8 +422,8 @@ export function EmailTemplateEditor({ templates }: EmailTemplateEditorProps) {
                       alignItems: 'center',
                       padding: '4px 12px',
                       borderRadius: '8px',
-                      background: 'rgba(0, 122, 255, 0.1)',
-                      color: '#007AFF',
+                      background: 'rgba(79, 70, 229, 0.1)',
+                      color: '#4F46E5',
                       fontSize: '13px',
                       fontWeight: 500,
                     }}
@@ -481,10 +481,10 @@ export function EmailTemplateEditor({ templates }: EmailTemplateEditorProps) {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  background: 'rgba(0, 122, 255, 0.1)',
+                  background: 'rgba(79, 70, 229, 0.1)',
                 }}
               >
-                <Eye size={20} style={{ color: '#007AFF' }} />
+                <Eye size={20} style={{ color: '#4F46E5' }} />
               </div>
               <div>
                 <h3 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--color-text)', margin: 0 }}>
@@ -720,8 +720,8 @@ export function EmailTemplateEditor({ templates }: EmailTemplateEditorProps) {
                             borderRadius: '100px',
                             fontSize: '12px',
                             fontWeight: 500,
-                            background: 'rgba(175, 82, 222, 0.1)',
-                            color: '#AF52DE',
+                            background: 'rgba(129, 140, 248, 0.1)',
+                            color: '#818CF8',
                           }}
                         >
                           {verticalLabel}
@@ -781,8 +781,8 @@ export function EmailTemplateEditor({ templates }: EmailTemplateEditorProps) {
                         transition: 'all 0.2s',
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(0, 122, 255, 0.08)'
-                        e.currentTarget.style.color = '#007AFF'
+                        e.currentTarget.style.background = 'rgba(79, 70, 229, 0.08)'
+                        e.currentTarget.style.color = '#4F46E5'
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.background = 'transparent'
@@ -804,13 +804,13 @@ export function EmailTemplateEditor({ templates }: EmailTemplateEditorProps) {
                         border: 'none',
                         background: 'transparent',
                         cursor: 'pointer',
-                        color: copiedId === template.id ? '#34C759' : 'var(--color-text-tertiary)',
+                        color: copiedId === template.id ? '#10B981' : 'var(--color-text-tertiary)',
                         transition: 'all 0.2s',
                       }}
                       onMouseEnter={(e) => {
                         if (copiedId !== template.id) {
-                          e.currentTarget.style.background = 'rgba(52, 199, 89, 0.08)'
-                          e.currentTarget.style.color = '#34C759'
+                          e.currentTarget.style.background = 'rgba(16, 185, 129, 0.08)'
+                          e.currentTarget.style.color = '#10B981'
                         }
                       }}
                       onMouseLeave={(e) => {
@@ -866,8 +866,8 @@ export function EmailTemplateEditor({ templates }: EmailTemplateEditorProps) {
                         transition: 'all 0.2s',
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(255, 59, 48, 0.08)'
-                        e.currentTarget.style.color = '#FF3B30'
+                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)'
+                        e.currentTarget.style.color = '#EF4444'
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.background = 'transparent'

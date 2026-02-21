@@ -93,8 +93,8 @@ export function DirectiveViewer({ directivePath, verticalName }: DirectiveViewer
         }}
         className="hover:border-[var(--color-border)] hover:bg-[var(--color-bg)]"
       >
-        <FileText size={16} style={{ color: '#007AFF', flexShrink: 0 }} />
-        <span style={{ fontSize: '13px', color: '#007AFF', flex: 1, fontWeight: 500 }}>
+        <FileText size={16} style={{ color: '#4F46E5', flexShrink: 0 }} />
+        <span style={{ fontSize: '13px', color: '#4F46E5', flex: 1, fontWeight: 500 }}>
           Kundenprofil ansehen
         </span>
         <ExternalLink size={14} style={{ color: 'var(--color-text-tertiary)' }} />
@@ -109,7 +109,7 @@ export function DirectiveViewer({ directivePath, verticalName }: DirectiveViewer
         <div style={{ maxHeight: '75vh', display: 'flex', flexDirection: 'column' }}>
           {isLoading && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px' }}>
-              <Loader2 size={24} className="animate-spin" style={{ color: '#007AFF' }} />
+              <Loader2 size={24} className="animate-spin" style={{ color: '#4F46E5' }} />
             </div>
           )}
 
@@ -144,7 +144,7 @@ export function DirectiveViewer({ directivePath, verticalName }: DirectiveViewer
                         padding: '10px 16px',
                         borderRadius: '10px',
                         border: 'none',
-                        background: isActive ? '#007AFF' : 'var(--color-bg-secondary)',
+                        background: isActive ? '#4F46E5' : 'var(--color-bg-secondary)',
                         color: isActive ? 'white' : 'var(--color-text-secondary)',
                         fontSize: '13px',
                         fontWeight: 500,
@@ -334,13 +334,13 @@ function OverviewTab({ data }: { data: ParsedDirective }) {
       {data.valueProposition && (
         <div style={{
           padding: '20px',
-          background: 'rgba(0, 122, 255, 0.08)',
+          background: 'rgba(79, 70, 229, 0.08)',
           borderRadius: '16px',
-          borderLeft: '4px solid #007AFF'
+          borderLeft: '4px solid #4F46E5'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-            <Target size={18} style={{ color: '#007AFF' }} />
-            <span style={{ fontSize: '13px', fontWeight: 600, color: '#007AFF', textTransform: 'uppercase' }}>
+            <Target size={18} style={{ color: '#4F46E5' }} />
+            <span style={{ fontSize: '13px', fontWeight: 600, color: '#4F46E5', textTransform: 'uppercase' }}>
               Kernbotschaft
             </span>
           </div>
@@ -364,14 +364,14 @@ function OverviewTab({ data }: { data: ParsedDirective }) {
           }}>
             <div style={{
               width: '40px', height: '40px', borderRadius: '10px',
-              background: 'rgba(52, 199, 89, 0.1)',
+              background: 'rgba(16, 185, 129, 0.1)',
               display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
-              <DollarSign size={20} style={{ color: '#34C759' }} />
+              <DollarSign size={20} style={{ color: '#10B981' }} />
             </div>
             <div>
               <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginBottom: '2px' }}>Target Deal Size</p>
-              <p style={{ fontSize: '16px', fontWeight: 600, color: '#34C759', margin: 0 }}>{data.targetDealSize}</p>
+              <p style={{ fontSize: '16px', fontWeight: 600, color: '#10B981', margin: 0 }}>{data.targetDealSize}</p>
             </div>
           </div>
           <div style={{
@@ -385,14 +385,14 @@ function OverviewTab({ data }: { data: ParsedDirective }) {
           }}>
             <div style={{
               width: '40px', height: '40px', borderRadius: '10px',
-              background: 'rgba(175, 82, 222, 0.1)',
+              background: 'rgba(129, 140, 248, 0.1)',
               display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
-              <Clock size={20} style={{ color: '#AF52DE' }} />
+              <Clock size={20} style={{ color: '#818CF8' }} />
             </div>
             <div>
               <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginBottom: '2px' }}>Zeitersparnis</p>
-              <p style={{ fontSize: '16px', fontWeight: 600, color: '#AF52DE', margin: 0 }}>15-23h/Woche</p>
+              <p style={{ fontSize: '16px', fontWeight: 600, color: '#818CF8', margin: 0 }}>15-23h/Woche</p>
             </div>
           </div>
         </div>
@@ -430,14 +430,14 @@ function OverviewTab({ data }: { data: ParsedDirective }) {
         {data.painSignals.length > 0 && (
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <CheckCircle2 size={16} style={{ color: '#34C759' }} />
-              <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#34C759', margin: 0 }}>Pain Signals</h4>
+              <CheckCircle2 size={16} style={{ color: '#10B981' }} />
+              <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#10B981', margin: 0 }}>Pain Signals</h4>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {data.painSignals.map((signal, i) => (
                 <div key={i} style={{
                   padding: '10px 12px',
-                  background: 'rgba(52, 199, 89, 0.08)',
+                  background: 'rgba(16, 185, 129, 0.08)',
                   borderRadius: '8px',
                   fontSize: '13px',
                   color: 'var(--color-text-secondary)',
@@ -454,14 +454,14 @@ function OverviewTab({ data }: { data: ParsedDirective }) {
         {data.disqualifiers.length > 0 && (
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <XCircle size={16} style={{ color: '#FF3B30' }} />
-              <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#FF3B30', margin: 0 }}>Disqualifiers</h4>
+              <XCircle size={16} style={{ color: '#EF4444' }} />
+              <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#EF4444', margin: 0 }}>Disqualifiers</h4>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {data.disqualifiers.map((item, i) => (
                 <div key={i} style={{
                   padding: '10px 12px',
-                  background: 'rgba(255, 59, 48, 0.08)',
+                  background: 'rgba(239, 68, 68, 0.08)',
                   borderRadius: '8px',
                   fontSize: '13px',
                   color: 'var(--color-text-secondary)',
@@ -498,9 +498,9 @@ function WorkflowsTab({ data }: { data: ParsedDirective }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{
                   width: '36px', height: '36px', borderRadius: '10px',
-                  background: 'rgba(175, 82, 222, 0.1)',
+                  background: 'rgba(129, 140, 248, 0.1)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '14px', fontWeight: 600, color: '#AF52DE'
+                  fontSize: '14px', fontWeight: 600, color: '#818CF8'
                 }}>
                   {i + 1}
                 </div>
@@ -511,11 +511,11 @@ function WorkflowsTab({ data }: { data: ParsedDirective }) {
               {workflow.timeBack && (
                 <span style={{
                   padding: '6px 12px',
-                  background: 'rgba(52, 199, 89, 0.1)',
+                  background: 'rgba(16, 185, 129, 0.1)',
                   borderRadius: '100px',
                   fontSize: '12px',
                   fontWeight: 600,
-                  color: '#34C759'
+                  color: '#10B981'
                 }}>
                   {workflow.timeBack}
                 </span>
@@ -549,7 +549,7 @@ function WorkflowsTab({ data }: { data: ParsedDirective }) {
       {/* Total Time Savings */}
       <div style={{
         padding: '16px 20px',
-        background: 'rgba(52, 199, 89, 0.1)',
+        background: 'rgba(16, 185, 129, 0.1)',
         borderRadius: '12px',
         display: 'flex',
         alignItems: 'center',
@@ -558,7 +558,7 @@ function WorkflowsTab({ data }: { data: ParsedDirective }) {
         <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text)' }}>
           Gesamt-Zeitersparnis:
         </span>
-        <span style={{ fontSize: '18px', fontWeight: 700, color: '#34C759' }}>
+        <span style={{ fontSize: '18px', fontWeight: 700, color: '#10B981' }}>
           15-23 Stunden/Woche
         </span>
       </div>
@@ -595,9 +595,9 @@ function ScriptsTab({ data }: { data: ParsedDirective }) {
                 style={{
                   padding: '8px 16px',
                   borderRadius: '100px',
-                  border: activeScript === i ? '1px solid #007AFF' : '1px solid var(--color-border)',
-                  background: activeScript === i ? 'rgba(0, 122, 255, 0.1)' : 'var(--color-bg)',
-                  color: activeScript === i ? '#007AFF' : 'var(--color-text-secondary)',
+                  border: activeScript === i ? '1px solid #4F46E5' : '1px solid var(--color-border)',
+                  background: activeScript === i ? 'rgba(79, 70, 229, 0.1)' : 'var(--color-bg)',
+                  color: activeScript === i ? '#4F46E5' : 'var(--color-text-secondary)',
                   fontSize: '13px',
                   fontWeight: 500,
                   cursor: 'pointer'
@@ -625,7 +625,7 @@ function ScriptsTab({ data }: { data: ParsedDirective }) {
                 }}
                 style={{
                   padding: '6px 12px',
-                  background: '#007AFF',
+                  background: '#4F46E5',
                   border: 'none',
                   borderRadius: '8px',
                   color: 'white',
@@ -663,13 +663,13 @@ function ScriptsTab({ data }: { data: ParsedDirective }) {
       {/* Discovery Call Tips */}
       <div style={{
         padding: '16px 20px',
-        background: 'rgba(255, 149, 0, 0.1)',
+        background: 'rgba(245, 158, 11, 0.1)',
         borderRadius: '12px',
-        borderLeft: '4px solid #FF9500'
+        borderLeft: '4px solid #F59E0B'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-          <Phone size={16} style={{ color: '#FF9500' }} />
-          <span style={{ fontSize: '13px', fontWeight: 600, color: '#FF9500' }}>Discovery Call Tipps</span>
+          <Phone size={16} style={{ color: '#F59E0B' }} />
+          <span style={{ fontSize: '13px', fontWeight: 600, color: '#F59E0B' }}>Discovery Call Tipps</span>
         </div>
         <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
           <li>Immer Fragen stellen, nicht pitchen</li>
@@ -705,18 +705,18 @@ function ObjectionsTab({ data }: { data: ParsedDirective }) {
               paddingBottom: '12px',
               borderBottom: '1px solid var(--color-border)'
             }}>
-              <ShieldAlert size={18} style={{ color: '#FF9500' }} />
+              <ShieldAlert size={18} style={{ color: '#F59E0B' }} />
               <h4 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--color-text)', margin: 0 }}>
                 "{item.objection}"
               </h4>
             </div>
             <div style={{
               padding: '16px',
-              background: 'rgba(52, 199, 89, 0.05)',
+              background: 'rgba(16, 185, 129, 0.05)',
               borderRadius: '12px',
-              borderLeft: '3px solid #34C759'
+              borderLeft: '3px solid #10B981'
             }}>
-              <p style={{ fontSize: '12px', color: '#34C759', fontWeight: 600, marginBottom: '8px' }}>
+              <p style={{ fontSize: '12px', color: '#10B981', fontWeight: 600, marginBottom: '8px' }}>
                 ANTWORT:
               </p>
               <pre style={{
@@ -742,10 +742,10 @@ function ObjectionsTab({ data }: { data: ParsedDirective }) {
       {/* General Tips */}
       <div style={{
         padding: '16px 20px',
-        background: 'rgba(0, 122, 255, 0.08)',
+        background: 'rgba(79, 70, 229, 0.08)',
         borderRadius: '12px'
       }}>
-        <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#007AFF', marginBottom: '12px' }}>
+        <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#4F46E5', marginBottom: '12px' }}>
           Allgemeine Tipps bei Einwänden:
         </h4>
         <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.8 }}>

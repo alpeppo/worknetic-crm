@@ -28,11 +28,11 @@ const STAGE_LABELS: Record<string, string> = {
   won: 'Gewonnen',
 }
 const STAGE_COLORS: Record<string, string> = {
-  discovery: '#007AFF',
-  qualification: '#AF52DE',
-  proposal: '#FF9500',
-  negotiation: '#FF3B30',
-  won: '#34C759',
+  discovery: '#4F46E5',
+  qualification: '#818CF8',
+  proposal: '#F59E0B',
+  negotiation: '#EF4444',
+  won: '#10B981',
 }
 
 const ACTIVITY_TYPE_LABELS: Record<string, string> = {
@@ -46,13 +46,13 @@ const ACTIVITY_TYPE_LABELS: Record<string, string> = {
 }
 
 const ACTIVITY_TYPE_COLORS: Record<string, string> = {
-  note: '#86868b',
-  call: '#007AFF',
-  email_sent: '#5AC8FA',
-  email_received: '#AF52DE',
-  meeting: '#FF9500',
+  note: '#64748B',
+  call: '#4F46E5',
+  email_sent: '#60A5FA',
+  email_received: '#818CF8',
+  meeting: '#F59E0B',
   linkedin_message: '#0A66C2',
-  follow_up: '#34C759',
+  follow_up: '#10B981',
 }
 
 function formatCurrency(value: number): string {
@@ -297,9 +297,9 @@ export function ReportsClient({ leads, deals, activities }: ReportsClientProps) 
             <span className="stat-label">Pipeline-Wert</span>
             <div
               className="stat-icon"
-              style={{ background: 'rgba(0, 122, 255, 0.1)' }}
+              style={{ background: 'rgba(79, 70, 229, 0.1)' }}
             >
-              <BarChart3 size={22} style={{ color: '#007AFF' }} />
+              <BarChart3 size={22} style={{ color: '#4F46E5' }} />
             </div>
           </div>
           <div className="stat-value">{'\u20AC'}{formatCurrency(kpis.totalPipeline)}</div>
@@ -318,12 +318,12 @@ export function ReportsClient({ leads, deals, activities }: ReportsClientProps) 
             <span className="stat-label">Gewonnener Umsatz</span>
             <div
               className="stat-icon"
-              style={{ background: 'rgba(52, 199, 89, 0.1)' }}
+              style={{ background: 'rgba(16, 185, 129, 0.1)' }}
             >
-              <DollarSign size={22} style={{ color: '#34C759' }} />
+              <DollarSign size={22} style={{ color: '#10B981' }} />
             </div>
           </div>
-          <div className="stat-value" style={{ color: '#34C759' }}>{'\u20AC'}{formatCurrency(kpis.wonRevenue)}</div>
+          <div className="stat-value" style={{ color: '#10B981' }}>{'\u20AC'}{formatCurrency(kpis.wonRevenue)}</div>
           <div className="stat-change positive" style={{ marginTop: '12px' }}>
             <ArrowUpRight size={14} />
             {kpis.wonCount} Deals gewonnen
@@ -336,9 +336,9 @@ export function ReportsClient({ leads, deals, activities }: ReportsClientProps) 
             <span className="stat-label">Win Rate</span>
             <div
               className="stat-icon"
-              style={{ background: 'rgba(175, 82, 222, 0.1)' }}
+              style={{ background: 'rgba(129, 140, 248, 0.1)' }}
             >
-              <Target size={22} style={{ color: '#AF52DE' }} />
+              <Target size={22} style={{ color: '#818CF8' }} />
             </div>
           </div>
           <div className="stat-value">{kpis.winRate.toFixed(1)}%</div>
@@ -357,9 +357,9 @@ export function ReportsClient({ leads, deals, activities }: ReportsClientProps) 
             <span className="stat-label">{'\u00D8'} Deal-Gr{'\u00F6'}{'\u00DF'}e</span>
             <div
               className="stat-icon"
-              style={{ background: 'rgba(255, 149, 0, 0.1)' }}
+              style={{ background: 'rgba(245, 158, 11, 0.1)' }}
             >
-              <TrendingUp size={22} style={{ color: '#FF9500' }} />
+              <TrendingUp size={22} style={{ color: '#F59E0B' }} />
             </div>
           </div>
           <div className="stat-value">{'\u20AC'}{formatCurrency(kpis.avgDealSize)}</div>
@@ -458,7 +458,7 @@ export function ReportsClient({ leads, deals, activities }: ReportsClientProps) 
           {sourceData.entries.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {sourceData.entries.map((item, index) => {
-                const barColors = ['#007AFF', '#AF52DE', '#FF9500', '#34C759', '#FF3B30', '#5AC8FA', '#86868b']
+                const barColors = ['#4F46E5', '#818CF8', '#F59E0B', '#10B981', '#EF4444', '#60A5FA', '#64748B']
                 const color = barColors[index % barColors.length]
                 return (
                   <div key={item.source}>
@@ -483,7 +483,7 @@ export function ReportsClient({ leads, deals, activities }: ReportsClientProps) 
                           style={{
                             fontSize: '13px',
                             fontWeight: 500,
-                            color: item.conversionRate >= 50 ? '#34C759' : item.conversionRate >= 25 ? '#FF9500' : 'var(--color-text-tertiary)',
+                            color: item.conversionRate >= 50 ? '#10B981' : item.conversionRate >= 25 ? '#F59E0B' : 'var(--color-text-tertiary)',
                           }}
                         >
                           {item.conversionRate.toFixed(0)}% Konversion
@@ -556,7 +556,7 @@ export function ReportsClient({ leads, deals, activities }: ReportsClientProps) 
                       maxWidth: '48px',
                       height: `${Math.max((m.count / leadsMonthMax) * 140, m.count > 0 ? 8 : 4)}px`,
                       background: m.count > 0
-                        ? 'linear-gradient(180deg, #007AFF, #007AFFcc)'
+                        ? 'linear-gradient(180deg, #4F46E5, #4F46E5cc)'
                         : 'var(--color-bg-tertiary)',
                       borderRadius: '8px 8px 4px 4px',
                       transition: 'height 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
@@ -607,7 +607,7 @@ export function ReportsClient({ leads, deals, activities }: ReportsClientProps) 
                     style={{
                       fontSize: '12px',
                       fontWeight: 600,
-                      color: '#34C759',
+                      color: '#10B981',
                       marginBottom: '6px',
                       whiteSpace: 'nowrap',
                     }}
@@ -621,7 +621,7 @@ export function ReportsClient({ leads, deals, activities }: ReportsClientProps) 
                       maxWidth: '48px',
                       height: `${Math.max((m.count / dealsMonthMax) * 140, m.count > 0 ? 8 : 4)}px`,
                       background: m.count > 0
-                        ? 'linear-gradient(180deg, #34C759, #34C759cc)'
+                        ? 'linear-gradient(180deg, #10B981, #10B981cc)'
                         : 'var(--color-bg-tertiary)',
                       borderRadius: '8px 8px 4px 4px',
                       transition: 'height 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
@@ -695,7 +695,7 @@ export function ReportsClient({ leads, deals, activities }: ReportsClientProps) 
                             width: '10px',
                             height: '10px',
                             borderRadius: '50%',
-                            background: '#AF52DE',
+                            background: '#818CF8',
                             flexShrink: 0,
                           }}
                         />
@@ -711,8 +711,8 @@ export function ReportsClient({ leads, deals, activities }: ReportsClientProps) 
                       <span
                         className="badge"
                         style={{
-                          background: v.qualifiedPct >= 50 ? 'rgba(52, 199, 89, 0.12)' : v.qualifiedPct >= 25 ? 'rgba(255, 149, 0, 0.12)' : 'var(--color-bg-tertiary)',
-                          color: v.qualifiedPct >= 50 ? '#34C759' : v.qualifiedPct >= 25 ? '#FF9500' : 'var(--color-text-secondary)',
+                          background: v.qualifiedPct >= 50 ? 'rgba(16, 185, 129, 0.12)' : v.qualifiedPct >= 25 ? 'rgba(245, 158, 11, 0.12)' : 'var(--color-bg-tertiary)',
+                          color: v.qualifiedPct >= 50 ? '#10B981' : v.qualifiedPct >= 25 ? '#F59E0B' : 'var(--color-text-secondary)',
                         }}
                       >
                         {v.qualifiedPct.toFixed(0)}%
@@ -724,7 +724,7 @@ export function ReportsClient({ leads, deals, activities }: ReportsClientProps) 
                           style={{
                             fontSize: '14px',
                             fontWeight: 600,
-                            color: v.avgScore >= 7 ? '#34C759' : v.avgScore >= 5 ? '#FF9500' : 'var(--color-text-tertiary)',
+                            color: v.avgScore >= 7 ? '#10B981' : v.avgScore >= 5 ? '#F59E0B' : 'var(--color-text-tertiary)',
                           }}
                         >
                           {v.avgScore > 0 ? v.avgScore.toFixed(1) : '–'}
@@ -735,7 +735,7 @@ export function ReportsClient({ leads, deals, activities }: ReportsClientProps) 
                               style={{
                                 height: '100%',
                                 width: `${(v.avgScore / 10) * 100}%`,
-                                background: v.avgScore >= 7 ? '#34C759' : v.avgScore >= 5 ? '#FF9500' : 'var(--color-bg-tertiary)',
+                                background: v.avgScore >= 7 ? '#10B981' : v.avgScore >= 5 ? '#F59E0B' : 'var(--color-bg-tertiary)',
                                 borderRadius: '100px',
                               }}
                             />
@@ -743,10 +743,10 @@ export function ReportsClient({ leads, deals, activities }: ReportsClientProps) 
                         )}
                       </div>
                     </td>
-                    <td style={{ padding: '16px 20px', textAlign: 'right', fontSize: '14px', fontWeight: 600, color: '#007AFF' }}>
+                    <td style={{ padding: '16px 20px', textAlign: 'right', fontSize: '14px', fontWeight: 600, color: '#4F46E5' }}>
                       {v.pipelineValue > 0 ? `\u20AC${formatCurrency(v.pipelineValue)}` : '–'}
                     </td>
-                    <td style={{ padding: '16px 24px', textAlign: 'right', fontSize: '14px', fontWeight: 600, color: '#34C759' }}>
+                    <td style={{ padding: '16px 24px', textAlign: 'right', fontSize: '14px', fontWeight: 600, color: '#10B981' }}>
                       {v.wonValue > 0 ? `\u20AC${formatCurrency(v.wonValue)}` : '–'}
                     </td>
                   </tr>
@@ -778,7 +778,7 @@ export function ReportsClient({ leads, deals, activities }: ReportsClientProps) 
             {activityTypeData.entries.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 {activityTypeData.entries.map((item) => {
-                  const color = ACTIVITY_TYPE_COLORS[item.type] || '#86868b'
+                  const color = ACTIVITY_TYPE_COLORS[item.type] || '#64748B'
                   const label = ACTIVITY_TYPE_LABELS[item.type] || item.type
                   const pct = activityTypeData.total > 0 ? (item.count / activityTypeData.total) * 100 : 0
                   return (
@@ -870,7 +870,7 @@ export function ReportsClient({ leads, deals, activities }: ReportsClientProps) 
                       maxWidth: '48px',
                       height: `${Math.max((w.count / activityWeekMax) * 140, w.count > 0 ? 8 : 4)}px`,
                       background: w.count > 0
-                        ? 'linear-gradient(180deg, #AF52DE, #AF52DEcc)'
+                        ? 'linear-gradient(180deg, #818CF8, #818CF8cc)'
                         : 'var(--color-bg-tertiary)',
                       borderRadius: '8px 8px 4px 4px',
                       transition: 'height 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',

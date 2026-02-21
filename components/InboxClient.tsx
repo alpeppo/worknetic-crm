@@ -43,16 +43,16 @@ const CHANNEL_FILTERS = [
 ]
 
 const TYPE_CONFIG: Record<string, { icon: typeof Mail; color: string; label: string }> = {
-  email_sent: { icon: Send, color: '#007AFF', label: 'E-Mail gesendet' },
-  email_received: { icon: Mail, color: '#5856D6', label: 'E-Mail empfangen' },
-  call: { icon: Phone, color: '#34C759', label: 'Anruf' },
-  meeting: { icon: CalendarCheck, color: '#AF52DE', label: 'Meeting' },
+  email_sent: { icon: Send, color: '#4F46E5', label: 'E-Mail gesendet' },
+  email_received: { icon: Mail, color: '#818CF8', label: 'E-Mail empfangen' },
+  call: { icon: Phone, color: '#10B981', label: 'Anruf' },
+  meeting: { icon: CalendarCheck, color: '#818CF8', label: 'Meeting' },
   linkedin_message: { icon: Send, color: '#0A66C2', label: 'LinkedIn' },
   whatsapp: { icon: Smartphone, color: '#25D366', label: 'WhatsApp' },
-  sms: { icon: MessageSquare, color: '#5AC8FA', label: 'SMS' },
-  video_call: { icon: Video, color: '#FF9500', label: 'Video Call' },
+  sms: { icon: MessageSquare, color: '#60A5FA', label: 'SMS' },
+  video_call: { icon: Video, color: '#F59E0B', label: 'Video Call' },
   note: { icon: FileText, color: '#8E8E93', label: 'Notiz' },
-  stage_change: { icon: ArrowUpDown, color: '#FF3B30', label: 'Stage geändert' },
+  stage_change: { icon: ArrowUpDown, color: '#EF4444', label: 'Stage geändert' },
 }
 
 function getChannelGroup(type: string): string {
@@ -183,9 +183,9 @@ export function InboxClient({ activities }: InboxClientProps) {
                   fontSize: '13px',
                   fontWeight: 500,
                   borderRadius: '100px',
-                  border: isActive ? '1px solid rgba(0,122,255,0.3)' : '1px solid transparent',
-                  background: isActive ? 'rgba(0,122,255,0.1)' : 'var(--color-bg-secondary)',
-                  color: isActive ? '#007AFF' : 'var(--color-text-secondary)',
+                  border: isActive ? '1px solid rgba(79,70,229,0.3)' : '1px solid transparent',
+                  background: isActive ? 'rgba(79,70,229,0.1)' : 'var(--color-bg-secondary)',
+                  color: isActive ? '#4F46E5' : 'var(--color-text-secondary)',
                   cursor: 'pointer',
                   transition: 'all 0.15s',
                   whiteSpace: 'nowrap',

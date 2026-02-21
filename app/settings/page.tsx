@@ -8,21 +8,21 @@ const settingsItems = [
     description: 'Vorlagen für Outreach, Follow-ups und Proposals',
     href: '/settings/templates',
     icon: Mail,
-    color: '#007AFF'
+    color: '#4F46E5'
   },
   {
     name: 'Automatisierung',
     description: 'Workflows und Regeln für automatische Aktionen',
     href: '/settings/workflows',
     icon: Zap,
-    color: '#FF9500'
+    color: '#F59E0B'
   },
   {
     name: 'Team & Benutzer',
     description: 'Benutzer verwalten und Rollen zuweisen',
     href: '/settings',
     icon: Users,
-    color: '#AF52DE',
+    color: '#818CF8',
     badge: 'Bald'
   },
   {
@@ -30,7 +30,7 @@ const settingsItems = [
     description: 'E-Mail und Push-Benachrichtigungen konfigurieren',
     href: '/settings',
     icon: Bell,
-    color: '#FF9500',
+    color: '#F59E0B',
     badge: 'Bald'
   },
   {
@@ -38,7 +38,7 @@ const settingsItems = [
     description: 'Passwort, 2FA und API-Schlüssel',
     href: '/settings',
     icon: Shield,
-    color: '#34C759',
+    color: '#10B981',
     badge: 'Bald'
   },
   {
@@ -46,7 +46,7 @@ const settingsItems = [
     description: 'Theme, Sprache und Darstellungsoptionen',
     href: '/settings',
     icon: Palette,
-    color: '#FF3B30',
+    color: '#EF4444',
     badge: 'Bald'
   },
   {
@@ -54,7 +54,7 @@ const settingsItems = [
     description: 'CSV-Import, Export und Datenbereinigung',
     href: '/leads',
     icon: Database,
-    color: '#5AC8FA'
+    color: '#60A5FA'
   }
 ]
 

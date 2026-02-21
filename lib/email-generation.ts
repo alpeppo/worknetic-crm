@@ -58,7 +58,7 @@ KERNREGEL: Wir verkaufen ZEIT, nicht Technologie.
 ZIELGRUPPE: Coaches, Berater, Consultants
 
 PREISE:
-- Workflow-Audit: €750 (2-3h Analyse + Report)
+- Workflow-Audit: Kostenlos (Discovery Call + zwei Dokumente: Workflow Audit mit Ist-Analyse und Konzeptpapier mit Automatisierungsplan, ROI und nächsten Schritten. Dauer: 1-2 Tage)
 - Pilot: €3.000-4.000 (1 Workflow + 14 Tage Support)
 - Standard: €6.000-8.000 (1-2 Workflows + 30 Tage Support)
 

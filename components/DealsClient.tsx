@@ -34,12 +34,12 @@ interface DealsClientProps {
 }
 
 const STAGES = [
-  { id: 'discovery', name: 'Discovery', color: '#3b82f6' },
-  { id: 'qualification', name: 'Qualification', color: '#8b5cf6' },
-  { id: 'proposal', name: 'Proposal', color: '#f59e0b' },
-  { id: 'negotiation', name: 'Negotiation', color: '#ef4444' },
-  { id: 'won', name: 'Won', color: '#10b981' },
-  { id: 'lost', name: 'Lost', color: '#8e8e93' },
+  { id: 'discovery', name: 'Discovery', color: '#4F46E5' },
+  { id: 'qualification', name: 'Qualification', color: '#818CF8' },
+  { id: 'proposal', name: 'Proposal', color: '#F59E0B' },
+  { id: 'negotiation', name: 'Negotiation', color: '#EF4444' },
+  { id: 'won', name: 'Won', color: '#10B981' },
+  { id: 'lost', name: 'Lost', color: '#64748B' },
 ]
 
 export function DealsClient({ deals, leads, headerOnly = false }: DealsClientProps) {
@@ -513,13 +513,13 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
           placeholder="Zusätzliche Informationen zum Deal..."
         />
       </div>
-      <div className="flex items-center justify-between pt-4 border-t border-[var(--border-light)]">
+      <div className="flex items-center justify-between pt-5 mt-1">
         {editingDeal ? (
           <button
             type="button"
             onClick={() => { setIsModalOpen(false); resetForm(); handleDelete(editingDeal.id); }}
-            className="btn flex items-center gap-2 text-[#FF3B30] hover:bg-[rgba(255,59,48,0.1)]"
-            style={{ background: 'none', border: '1px solid rgba(255,59,48,0.3)' }}
+            className="btn flex items-center gap-2 text-[#EF4444] hover:bg-[rgba(239,68,68,0.1)]"
+            style={{ background: 'none', border: '1px solid rgba(239,68,68,0.3)' }}
           >
             <Trash2 size={16} />
             Löschen
@@ -570,79 +570,39 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
 
   return (
     <>
-      {/* Stats - computed from effectiveDeals for instant updates */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '32px' }}>
-        <div
-          style={{
-            background: 'var(--color-bg)',
-            borderRadius: '20px',
-            border: '1px solid var(--color-border)',
-            padding: '24px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pipeline</span>
-            <div style={{ width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 122, 255, 0.1)' }}>
-              <TrendingUp size={22} style={{ color: '#007AFF' }} />
-            </div>
+      {/* Stats */}
+      <div className="stats-grid">
+        <div className="stat-card" style={{ '--stat-accent': 'var(--color-blue)' } as React.CSSProperties}>
+          <div className="stat-card-header">
+            <span className="stat-label">Pipeline</span>
+            <div className="stat-icon stat-icon-blue"><TrendingUp size={22} /></div>
           </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, color: '#007AFF', letterSpacing: '-0.5px' }}>€{(pipelineValue / 1000).toFixed(0)}k</div>
-          <p style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', marginTop: '8px' }}>Gesamtwert</p>
+          <div className="stat-value" style={{ color: 'var(--color-blue)' }}>€{(pipelineValue / 1000).toFixed(0)}k</div>
+          <p className="stat-subtitle">Gesamtwert</p>
         </div>
-        <div
-          style={{
-            background: 'var(--color-bg)',
-            borderRadius: '20px',
-            border: '1px solid var(--color-border)',
-            padding: '24px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Gewonnen</span>
-            <div style={{ width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(52, 199, 89, 0.1)' }}>
-              <DollarSign size={22} style={{ color: '#34C759' }} />
-            </div>
+        <div className="stat-card" style={{ '--stat-accent': 'var(--color-green)' } as React.CSSProperties}>
+          <div className="stat-card-header">
+            <span className="stat-label">Gewonnen</span>
+            <div className="stat-icon stat-icon-green"><DollarSign size={22} /></div>
           </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, color: '#34C759', letterSpacing: '-0.5px' }}>€{(wonValue / 1000).toFixed(0)}k</div>
-          <p style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', marginTop: '8px' }}>Abgeschlossen</p>
+          <div className="stat-value" style={{ color: 'var(--color-green)' }}>€{(wonValue / 1000).toFixed(0)}k</div>
+          <p className="stat-subtitle">Abgeschlossen</p>
         </div>
-        <div
-          style={{
-            background: 'var(--color-bg)',
-            borderRadius: '20px',
-            border: '1px solid var(--color-border)',
-            padding: '24px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Gewichtet</span>
-            <div style={{ width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(175, 82, 222, 0.1)' }}>
-              <Target size={22} style={{ color: '#AF52DE' }} />
-            </div>
+        <div className="stat-card" style={{ '--stat-accent': 'var(--color-purple)' } as React.CSSProperties}>
+          <div className="stat-card-header">
+            <span className="stat-label">Gewichtet</span>
+            <div className="stat-icon stat-icon-purple"><Target size={22} /></div>
           </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, color: '#AF52DE', letterSpacing: '-0.5px' }}>€{(weightedPipeline / 1000).toFixed(0)}k</div>
-          <p style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', marginTop: '8px' }}>Pipeline × Probability</p>
+          <div className="stat-value" style={{ color: 'var(--color-purple)' }}>€{(weightedPipeline / 1000).toFixed(0)}k</div>
+          <p className="stat-subtitle">Pipeline × Probability</p>
         </div>
-        <div
-          style={{
-            background: 'var(--color-bg)',
-            borderRadius: '20px',
-            border: '1px solid var(--color-border)',
-            padding: '24px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Win Rate</span>
-            <div style={{ width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255, 149, 0, 0.1)' }}>
-              <Percent size={22} style={{ color: '#FF9500' }} />
-            </div>
+        <div className="stat-card" style={{ '--stat-accent': 'var(--color-orange)' } as React.CSSProperties}>
+          <div className="stat-card-header">
+            <span className="stat-label">Win Rate</span>
+            <div className="stat-icon stat-icon-orange"><Percent size={22} /></div>
           </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, color: '#FF9500', letterSpacing: '-0.5px' }}>{winRate}%</div>
-          <p style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', marginTop: '8px' }}>{closedDeals.length} abgeschlossen</p>
+          <div className="stat-value" style={{ color: 'var(--color-orange)' }}>{winRate}%</div>
+          <p className="stat-subtitle">{closedDeals.length} abgeschlossen</p>
         </div>
       </div>
 
@@ -658,7 +618,7 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
               className="kanban-column"
               data-stage={stage.id}
             >
-              <div className="kanban-column-header">
+              <div className="kanban-column-header" style={{ '--kanban-accent': stage.color } as React.CSSProperties}>
                 <div className="kanban-column-title">
                   <span
                     className="w-3 h-3 rounded-full"
@@ -700,7 +660,7 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
                           <div className="flex items-center gap-0.5">
                             <button
                               onClick={(e) => { e.stopPropagation(); setQuickNoteDealId(deal.id); setQuickNoteText(''); }}
-                              className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-[rgba(0,122,255,0.1)] text-muted hover:text-[#007AFF] transition-all"
+                              className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-[rgba(79,70,229,0.1)] text-muted hover:text-[#4F46E5] transition-all"
                               title="Schnelle Notiz"
                             >
                               <MessageSquare size={14} />
@@ -714,7 +674,7 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
                             <button
                               onClick={(e) => { e.stopPropagation(); handleDelete(deal.id); }}
                               disabled={deletingDealId === deal.id}
-                              className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-[rgba(255,59,48,0.1)] text-muted hover:text-[#FF3B30] transition-all"
+                              className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-[rgba(239,68,68,0.1)] text-muted hover:text-[#EF4444] transition-all"
                             >
                               <Trash2 size={14} />
                             </button>
@@ -739,7 +699,7 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
                             const days = Math.floor((Date.now() - new Date(deal.created_at).getTime()) / (1000 * 60 * 60 * 24))
                             const isStale = days > 30
                             return (
-                              <div className="flex items-center gap-1 text-xs" style={{ color: isStale ? '#FF3B30' : 'var(--color-text-tertiary)' }}>
+                              <div className="flex items-center gap-1 text-xs" style={{ color: isStale ? '#EF4444' : 'var(--color-text-tertiary)' }}>
                                 <Clock size={11} />
                                 {days}d
                               </div>
@@ -755,7 +715,7 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
                           )}
                         </div>
                         {deal.stage === 'lost' && deal.lost_reason && (
-                          <div className="mt-2 px-2 py-1 rounded-md text-xs" style={{ background: 'rgba(255,59,48,0.08)', color: '#FF3B30' }}>
+                          <div className="mt-2 px-2 py-1 rounded-md text-xs" style={{ background: 'rgba(239,68,68,0.08)', color: '#EF4444' }}>
                             {deal.lost_reason === 'budget' && 'Budget / Zu teuer'}
                             {deal.lost_reason === 'timing' && 'Timing'}
                             {deal.lost_reason === 'competitor' && 'Wettbewerber'}
@@ -776,11 +736,11 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
 
                 {/* Add Deal Button */}
                 <button
-                  className="w-full py-3 border-2 border-dashed border-[var(--color-border)] rounded-lg text-muted text-sm hover:border-[#007AFF] hover:text-[#007AFF] transition-colors"
+                  className="w-full py-3 border-2 border-dashed border-[var(--color-border)] rounded-xl text-muted text-sm hover:border-[#4F46E5] hover:text-[#4F46E5] hover:bg-[rgba(79,70,229,0.03)] transition-all flex items-center justify-center gap-2"
                   onClick={() => { resetForm(); setIsModalOpen(true); }}
                 >
-                  <Plus size={16} className="inline mr-1" />
-                  Deal hinzufügen
+                  <Plus size={15} />
+                  <span>Hinzufügen</span>
                 </button>
               </div>
             </div>
@@ -806,8 +766,8 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
         size="md"
       >
         <div className="space-y-4">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px', background: 'rgba(255,59,48,0.06)', borderRadius: '12px', border: '1px solid rgba(255,59,48,0.15)' }}>
-            <XCircle size={20} style={{ color: '#FF3B30', flexShrink: 0 }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px', background: 'rgba(239,68,68,0.06)', borderRadius: '12px', border: '1px solid rgba(239,68,68,0.15)' }}>
+            <XCircle size={20} style={{ color: '#EF4444', flexShrink: 0 }} />
             <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>
               Warum wurde dieser Deal verloren? Diese Info hilft, den Sales-Prozess zu verbessern.
             </p>
@@ -839,7 +799,7 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
               placeholder="Was genau ist passiert? Was können wir daraus lernen?"
             />
           </div>
-          <div className="flex justify-end gap-3 pt-4 border-t border-[var(--border-light)]">
+          <div className="flex justify-end gap-3 pt-5 mt-1">
             <button
               type="button"
               className="btn btn-secondary"
@@ -850,7 +810,7 @@ export function DealsClient({ deals, leads, headerOnly = false }: DealsClientPro
             <button
               type="button"
               className="btn"
-              style={{ background: '#FF3B30', color: 'white', border: 'none' }}
+              style={{ background: '#EF4444', color: 'white', border: 'none' }}
               onClick={confirmLostDeal}
             >
               Als verloren markieren

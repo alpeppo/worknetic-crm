@@ -81,15 +81,15 @@ interface LeadsClientProps {
 }
 
 const STAGES = [
-  { value: 'new', label: 'Neu', color: '#86868b' },
-  { value: 'contacted', label: 'Kontaktiert', color: '#007AFF' },
-  { value: 'follow_up', label: 'Follow-up', color: '#5856D6' },
-  { value: 'qualified', label: 'Qualifiziert', color: '#AF52DE' },
-  { value: 'discovery_call', label: 'Discovery', color: '#FF9500' },
-  { value: 'proposal_sent', label: 'Proposal', color: '#FF9500' },
-  { value: 'negotiation', label: 'Negotiation', color: '#FF3B30' },
-  { value: 'won', label: 'Gewonnen', color: '#34C759' },
-  { value: 'lost', label: 'Verloren', color: '#86868b' },
+  { value: 'new', label: 'Neu', color: '#64748B' },
+  { value: 'contacted', label: 'Kontaktiert', color: '#4F46E5' },
+  { value: 'follow_up', label: 'Follow-up', color: '#818CF8' },
+  { value: 'qualified', label: 'Qualifiziert', color: '#818CF8' },
+  { value: 'discovery_call', label: 'Discovery', color: '#F59E0B' },
+  { value: 'proposal_sent', label: 'Proposal', color: '#F59E0B' },
+  { value: 'negotiation', label: 'Negotiation', color: '#EF4444' },
+  { value: 'won', label: 'Gewonnen', color: '#10B981' },
+  { value: 'lost', label: 'Verloren', color: '#64748B' },
 ]
 
 type TabType = 'inbox' | 'ready' | 'all'
@@ -121,7 +121,7 @@ export function LeadsClient({
 
   // Extract unique verticals from leads if not provided
   const uniqueVerticals = verticals.length > 0 ? verticals :
-    [...new Set(leads.map(l => l.vertical).filter(Boolean))].map(v => ({ id: v!, name: v!, color: '#007AFF' }))
+    [...new Set(leads.map(l => l.vertical).filter(Boolean))].map(v => ({ id: v!, name: v!, color: '#4F46E5' }))
 
   const getLeadsByTab = () => {
     switch (activeTab) {
@@ -147,9 +147,9 @@ export function LeadsClient({
   })
 
   const getScoreColor = (score: number) => {
-    if (score >= 7) return '#34C759'
-    if (score >= 5) return '#FF9500'
-    return '#86868b'
+    if (score >= 7) return '#10B981'
+    if (score >= 5) return '#F59E0B'
+    return '#64748B'
   }
 
   const getScoreClass = (score: number) => {
@@ -165,7 +165,11 @@ export function LeadsClient({
   const handleStageChange = async (leadId: string, newStage: string) => {
     setIsLoading(leadId)
     setActiveDropdown(null)
-    await updateLeadStage(leadId, newStage)
+    const result = await updateLeadStage(leadId, newStage)
+    if (result && !result.success) {
+      console.error('Stage update failed:', result.error)
+      alert(`Stage konnte nicht geändert werden: ${result.error || 'Unbekannter Fehler'}`)
+    }
     router.refresh()
     setIsLoading(null)
   }
@@ -287,237 +291,72 @@ export function LeadsClient({
 
   return (
     <>
-      {/* Stats - Verticals Style */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '32px' }}>
-        <div
-          style={{
-            background: 'var(--color-bg)',
-            borderRadius: '20px',
-            border: '1px solid var(--color-border)',
-            padding: '24px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Gesamt</span>
-            <div style={{ width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 122, 255, 0.1)' }}>
-              <Users size={22} style={{ color: '#007AFF' }} />
-            </div>
+      {/* Stats */}
+      <div className="stats-grid">
+        <div className="stat-card" style={{ '--stat-accent': 'var(--color-blue)' } as React.CSSProperties}>
+          <div className="stat-card-header">
+            <span className="stat-label">Gesamt</span>
+            <div className="stat-icon stat-icon-blue"><Users size={22} /></div>
           </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.5px' }}>{totalLeads}</div>
-          <p style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', marginTop: '8px' }}>{qualifiedLeads} qualifiziert</p>
+          <div className="stat-value">{totalLeads}</div>
+          <p className="stat-subtitle">{qualifiedLeads} qualifiziert</p>
         </div>
-        <div
-          style={{
-            background: 'var(--color-bg)',
-            borderRadius: '20px',
-            border: '1px solid var(--color-border)',
-            padding: '24px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inbox</span>
-            <div style={{ width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255, 149, 0, 0.1)' }}>
-              <Inbox size={22} style={{ color: '#FF9500' }} />
-            </div>
+        <div className="stat-card" style={{ '--stat-accent': 'var(--color-orange)' } as React.CSSProperties}>
+          <div className="stat-card-header">
+            <span className="stat-label">Inbox</span>
+            <div className="stat-icon stat-icon-orange"><Inbox size={22} /></div>
           </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, color: '#FF9500', letterSpacing: '-0.5px' }}>{inboxCount}</div>
-          <p style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', marginTop: '8px' }}>Zu bearbeiten</p>
+          <div className="stat-value" style={{ color: 'var(--color-orange)' }}>{inboxCount}</div>
+          <p className="stat-subtitle">Zu bearbeiten</p>
         </div>
-        <div
-          style={{
-            background: 'var(--color-bg)',
-            borderRadius: '20px',
-            border: '1px solid var(--color-border)',
-            padding: '24px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Hot</span>
-            <div style={{ width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255, 59, 48, 0.1)' }}>
-              <Flame size={22} style={{ color: '#FF3B30' }} />
-            </div>
+        <div className="stat-card" style={{ '--stat-accent': 'var(--color-red)' } as React.CSSProperties}>
+          <div className="stat-card-header">
+            <span className="stat-label">Hot</span>
+            <div className="stat-icon stat-icon-red"><Flame size={22} /></div>
           </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, color: '#FF3B30', letterSpacing: '-0.5px' }}>{hotLeadsCount}</div>
-          <p style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', marginTop: '8px' }}>{withPhoneCount} mit Telefon</p>
+          <div className="stat-value" style={{ color: 'var(--color-red)' }}>{hotLeadsCount}</div>
+          <p className="stat-subtitle">{withPhoneCount} mit Telefon</p>
         </div>
-        <div
-          style={{
-            background: 'var(--color-bg)',
-            borderRadius: '20px',
-            border: '1px solid var(--color-border)',
-            padding: '24px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Ø Score</span>
-            <div style={{ width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(52, 199, 89, 0.1)' }}>
-              <TrendingUp size={22} style={{ color: '#34C759' }} />
-            </div>
+        <div className="stat-card" style={{ '--stat-accent': 'var(--color-green)' } as React.CSSProperties}>
+          <div className="stat-card-header">
+            <span className="stat-label">Ø Score</span>
+            <div className="stat-icon stat-icon-green"><TrendingUp size={22} /></div>
           </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.5px' }}>{avgScore}</div>
-          <p style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', marginTop: '8px' }}>von 10</p>
+          <div className="stat-value">{avgScore}</div>
+          <p className="stat-subtitle">von 10</p>
         </div>
       </div>
 
-      {/* Tabs - Modern Style */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '20px',
-          padding: '16px 20px',
-          background: 'var(--color-bg)',
-          borderRadius: '16px',
-          border: '1px solid var(--color-border)'
-        }}
-      >
-        <div style={{ display: 'flex', gap: '8px', background: 'var(--color-bg-secondary)', padding: '6px', borderRadius: '12px' }}>
-          <button
-            onClick={() => setActiveTab('inbox')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 18px',
-              borderRadius: '10px',
-              border: 'none',
-              fontSize: '14px',
-              fontWeight: 500,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              background: activeTab === 'inbox' ? 'var(--color-bg)' : 'transparent',
-              color: activeTab === 'inbox' ? 'var(--color-text)' : 'var(--color-text-tertiary)',
-              boxShadow: activeTab === 'inbox' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
-            }}
-          >
+      {/* Tabs & Actions */}
+      <div className="actions-bar">
+        <div className="tabs">
+          <button onClick={() => setActiveTab('inbox')} className={`tab ${activeTab === 'inbox' ? 'active' : ''}`}>
             <Inbox size={16} />
             Inbox
-            {inboxCount > 0 && (
-              <span style={{
-                padding: '2px 8px',
-                borderRadius: '100px',
-                fontSize: '11px',
-                fontWeight: 600,
-                background: activeTab === 'inbox' ? '#FF9500' : 'rgba(255, 149, 0, 0.15)',
-                color: activeTab === 'inbox' ? 'white' : '#FF9500'
-              }}>
-                {inboxCount}
-              </span>
-            )}
+            {inboxCount > 0 && <span className="tab-badge">{inboxCount}</span>}
           </button>
-          <button
-            onClick={() => setActiveTab('ready')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 18px',
-              borderRadius: '10px',
-              border: 'none',
-              fontSize: '14px',
-              fontWeight: 500,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              background: activeTab === 'ready' ? 'var(--color-bg)' : 'transparent',
-              color: activeTab === 'ready' ? 'var(--color-text)' : 'var(--color-text-tertiary)',
-              boxShadow: activeTab === 'ready' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
-            }}
-          >
+          <button onClick={() => setActiveTab('ready')} className={`tab ${activeTab === 'ready' ? 'active' : ''}`}>
             <CheckCircle2 size={16} />
             Ready
             <span style={{ fontSize: '12px', opacity: 0.6 }}>{readyCount}</span>
           </button>
-          <button
-            onClick={() => setActiveTab('all')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 18px',
-              borderRadius: '10px',
-              border: 'none',
-              fontSize: '14px',
-              fontWeight: 500,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              background: activeTab === 'all' ? 'var(--color-bg)' : 'transparent',
-              color: activeTab === 'all' ? 'var(--color-text)' : 'var(--color-text-tertiary)',
-              boxShadow: activeTab === 'all' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
-            }}
-          >
+          <button onClick={() => setActiveTab('all')} className={`tab ${activeTab === 'all' ? 'active' : ''}`}>
             <Users size={16} />
             Alle
             <span style={{ fontSize: '12px', opacity: 0.6 }}>{totalLeads}</span>
           </button>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button
-            onClick={() => setIsCSVModalOpen(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 18px',
-              background: 'var(--color-bg)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '12px',
-              fontSize: '14px',
-              fontWeight: 500,
-              color: 'var(--color-text-secondary)',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-            className="hover:bg-[var(--color-bg-secondary)] hover:border-[var(--color-border-strong)]"
-          >
+        <div className="actions-bar-right">
+          <button onClick={() => setIsCSVModalOpen(true)} className="btn btn-secondary btn-sm">
             <Upload size={16} />
             CSV Import
           </button>
-          <button
-            onClick={handleCSVExport}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 18px',
-              background: 'var(--color-bg)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '12px',
-              fontSize: '14px',
-              fontWeight: 500,
-              color: 'var(--color-text-secondary)',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-            className="hover:bg-[var(--color-bg-secondary)] hover:border-[var(--color-border-strong)]"
-          >
+          <button onClick={handleCSVExport} className="btn btn-secondary btn-sm">
             <Download size={16} />
             CSV Export
           </button>
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 18px',
-              background: '#007AFF',
-              border: 'none',
-              borderRadius: '12px',
-              fontSize: '14px',
-              fontWeight: 500,
-              color: 'white',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              boxShadow: '0 2px 8px rgba(0, 122, 255, 0.25)'
-            }}
-            className="hover:bg-[#0066d6]"
-          >
+          <button onClick={() => setIsCreateModalOpen(true)} className="btn btn-primary btn-sm">
             <Plus size={16} />
             Neuer Lead
           </button>
@@ -533,16 +372,16 @@ export function LeadsClient({
             gap: '12px',
             padding: '14px 20px',
             marginBottom: '16px',
-            background: 'rgba(0, 122, 255, 0.06)',
-            border: '1px solid rgba(0, 122, 255, 0.2)',
+            background: 'rgba(79, 70, 229, 0.06)',
+            border: '1px solid rgba(79, 70, 229, 0.2)',
             borderRadius: '16px',
             transition: 'all 0.2s'
           }}
         >
-          <span style={{ fontSize: '14px', fontWeight: 600, color: '#007AFF' }}>
+          <span style={{ fontSize: '14px', fontWeight: 600, color: '#4F46E5' }}>
             {selectedLeads.size} ausgewählt
           </span>
-          <div style={{ width: '1px', height: '24px', background: 'rgba(0, 122, 255, 0.2)' }} />
+          <div style={{ width: '1px', height: '24px', background: 'rgba(79, 70, 229, 0.2)' }} />
           <button
             onClick={() => handleBulkMarkReviewed(true)}
             disabled={isBulkLoading}
@@ -550,7 +389,7 @@ export function LeadsClient({
               display: 'flex', alignItems: 'center', gap: '6px',
               padding: '8px 14px', borderRadius: '10px', border: '1px solid var(--color-border)',
               background: 'var(--color-bg)', fontSize: '13px', fontWeight: 500,
-              color: '#34C759', cursor: 'pointer', transition: 'all 0.2s'
+              color: '#10B981', cursor: 'pointer', transition: 'all 0.2s'
             }}
           >
             <CheckCircle2 size={14} /> Ready
@@ -601,9 +440,9 @@ export function LeadsClient({
             disabled={isBulkLoading}
             style={{
               display: 'flex', alignItems: 'center', gap: '6px',
-              padding: '8px 14px', borderRadius: '10px', border: '1px solid rgba(255, 59, 48, 0.3)',
-              background: 'rgba(255, 59, 48, 0.06)', fontSize: '13px', fontWeight: 500,
-              color: '#FF3B30', cursor: 'pointer', transition: 'all 0.2s'
+              padding: '8px 14px', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.3)',
+              background: 'rgba(239, 68, 68, 0.06)', fontSize: '13px', fontWeight: 500,
+              color: '#EF4444', cursor: 'pointer', transition: 'all 0.2s'
             }}
           >
             <Trash2 size={14} /> Löschen
@@ -623,27 +462,15 @@ export function LeadsClient({
         </div>
       )}
 
-      {/* Filters - Modern Pill Style */}
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+      {/* Filters */}
+      <div className="filters-bar">
         {/* Vertical Filter Dropdown */}
         {uniqueVerticals.length > 0 && (
-          <div style={{ position: 'relative' }}>
+          <div className="dropdown">
             <button
               onClick={() => setActiveDropdown(activeDropdown === 'vertical-filter' ? null : 'vertical-filter')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '8px 14px',
-                borderRadius: '100px',
-                border: verticalFilter !== 'all' ? '1px solid #AF52DE' : '1px solid var(--color-border)',
-                background: verticalFilter !== 'all' ? 'rgba(175, 82, 222, 0.08)' : 'var(--color-bg)',
-                fontSize: '13px',
-                fontWeight: 500,
-                color: verticalFilter !== 'all' ? '#AF52DE' : 'var(--color-text-secondary)',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
+              className={`filter-btn ${verticalFilter !== 'all' ? 'active' : ''}`}
+              style={verticalFilter !== 'all' ? { borderColor: '#818CF8', background: 'rgba(129, 140, 248, 0.08)', color: '#818CF8' } : undefined}
             >
               <Target size={14} />
               {verticalFilter === 'all' ? 'Zielgruppe' : uniqueVerticals.find(v => v.id === verticalFilter)?.name || verticalFilter}
@@ -709,7 +536,7 @@ export function LeadsClient({
                         width: '10px',
                         height: '10px',
                         borderRadius: '50%',
-                        background: vertical.color || '#AF52DE'
+                        background: vertical.color || '#818CF8'
                       }}
                     />
                     {vertical.name}
@@ -725,114 +552,28 @@ export function LeadsClient({
 
         <div style={{ width: '1px', height: '24px', background: 'var(--color-border)', margin: '0 6px' }} />
 
-        <button
-          onClick={() => setFilter('all')}
-          style={{
-            padding: '8px 16px',
-            borderRadius: '100px',
-            border: filter === 'all' ? '1px solid #007AFF' : '1px solid var(--color-border)',
-            background: filter === 'all' ? 'rgba(0, 122, 255, 0.08)' : 'var(--color-bg)',
-            fontSize: '13px',
-            fontWeight: 500,
-            color: filter === 'all' ? '#007AFF' : 'var(--color-text-secondary)',
-            cursor: 'pointer',
-            transition: 'all 0.2s'
-          }}
-        >
+        <button onClick={() => setFilter('all')} className={`filter-btn ${filter === 'all' ? 'active' : ''}`}>
           Alle
         </button>
-        <button
-          onClick={() => setFilter('hot')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '8px 16px',
-            borderRadius: '100px',
-            border: filter === 'hot' ? '1px solid #FF3B30' : '1px solid var(--color-border)',
-            background: filter === 'hot' ? 'rgba(255, 59, 48, 0.08)' : 'var(--color-bg)',
-            fontSize: '13px',
-            fontWeight: 500,
-            color: filter === 'hot' ? '#FF3B30' : 'var(--color-text-secondary)',
-            cursor: 'pointer',
-            transition: 'all 0.2s'
-          }}
-        >
-          <Flame size={14} />
-          Hot
+        <button onClick={() => setFilter('hot')} className={`filter-btn ${filter === 'hot' ? 'active' : ''}`}
+          style={filter === 'hot' ? { borderColor: '#EF4444', background: 'rgba(239, 68, 68, 0.08)', color: '#EF4444' } : undefined}>
+          <Flame size={14} /> Hot
         </button>
-        <button
-          onClick={() => setFilter('with_phone')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '8px 16px',
-            borderRadius: '100px',
-            border: filter === 'with_phone' ? '1px solid #34C759' : '1px solid var(--color-border)',
-            background: filter === 'with_phone' ? 'rgba(52, 199, 89, 0.08)' : 'var(--color-bg)',
-            fontSize: '13px',
-            fontWeight: 500,
-            color: filter === 'with_phone' ? '#34C759' : 'var(--color-text-secondary)',
-            cursor: 'pointer',
-            transition: 'all 0.2s'
-          }}
-        >
-          <Phone size={14} />
-          Mit Telefon
+        <button onClick={() => setFilter('with_phone')} className={`filter-btn ${filter === 'with_phone' ? 'active' : ''}`}
+          style={filter === 'with_phone' ? { borderColor: '#10B981', background: 'rgba(16, 185, 129, 0.08)', color: '#10B981' } : undefined}>
+          <Phone size={14} /> Mit Telefon
         </button>
-        <button
-          onClick={() => setFilter('qualified')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '8px 16px',
-            borderRadius: '100px',
-            border: filter === 'qualified' ? '1px solid #AF52DE' : '1px solid var(--color-border)',
-            background: filter === 'qualified' ? 'rgba(175, 82, 222, 0.08)' : 'var(--color-bg)',
-            fontSize: '13px',
-            fontWeight: 500,
-            color: filter === 'qualified' ? '#AF52DE' : 'var(--color-text-secondary)',
-            cursor: 'pointer',
-            transition: 'all 0.2s'
-          }}
-        >
-          <Check size={14} />
-          Qualifiziert
+        <button onClick={() => setFilter('qualified')} className={`filter-btn ${filter === 'qualified' ? 'active' : ''}`}
+          style={filter === 'qualified' ? { borderColor: '#818CF8', background: 'rgba(129, 140, 248, 0.08)', color: '#818CF8' } : undefined}>
+          <Check size={14} /> Qualifiziert
         </button>
-        <button
-          onClick={() => setFilter('high_score')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '8px 16px',
-            borderRadius: '100px',
-            border: filter === 'high_score' ? '1px solid #007AFF' : '1px solid var(--color-border)',
-            background: filter === 'high_score' ? 'rgba(0, 122, 255, 0.08)' : 'var(--color-bg)',
-            fontSize: '13px',
-            fontWeight: 500,
-            color: filter === 'high_score' ? '#007AFF' : 'var(--color-text-secondary)',
-            cursor: 'pointer',
-            transition: 'all 0.2s'
-          }}
-        >
-          <TrendingUp size={14} />
-          Score ≥ 7
+        <button onClick={() => setFilter('high_score')} className={`filter-btn ${filter === 'high_score' ? 'active' : ''}`}>
+          <TrendingUp size={14} /> Score ≥ 7
         </button>
       </div>
 
-      {/* Table - Modern Card Style */}
-      <div
-        style={{
-          background: 'var(--color-bg)',
-          borderRadius: '20px',
-          border: '1px solid var(--color-border)',
-          overflow: 'hidden',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-        }}
-      >
+      {/* Table */}
+      <div className="table-container">
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
@@ -841,7 +582,7 @@ export function LeadsClient({
                   type="checkbox"
                   checked={filteredLeads.length > 0 && selectedLeads.size === filteredLeads.length}
                   onChange={toggleSelectAll}
-                  style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#007AFF' }}
+                  style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#4F46E5' }}
                 />
               </th>
               <th style={{ width: '26%' }}>
@@ -867,13 +608,13 @@ export function LeadsClient({
                 const stageInfo = getStageInfo(lead.stage || 'new')
 
                 return (
-                  <tr key={lead.id} className={`${isLoading === lead.id ? 'opacity-50' : ''} group`} style={{ background: selectedLeads.has(lead.id) ? 'rgba(0, 122, 255, 0.03)' : undefined }}>
+                  <tr key={lead.id} className={`${isLoading === lead.id ? 'opacity-50' : ''} group`} style={{ background: selectedLeads.has(lead.id) ? 'rgba(79, 70, 229, 0.03)' : undefined }}>
                     <td style={{ padding: '12px 0 12px 20px', width: '40px' }}>
                       <input
                         type="checkbox"
                         checked={selectedLeads.has(lead.id)}
                         onChange={() => toggleLeadSelection(lead.id)}
-                        style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#007AFF' }}
+                        style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#4F46E5' }}
                       />
                     </td>
                     <td>
@@ -883,8 +624,8 @@ export function LeadsClient({
                           <div className="lead-name flex items-center gap-2">
                             {lead.name}
                             {lead.qualified && (
-                              <span className="inline-flex items-center justify-center w-4 h-4 rounded-full" style={{ background: 'rgba(52, 199, 89, 0.15)' }}>
-                                <Check size={10} style={{ color: '#34C759' }} />
+                              <span className="inline-flex items-center justify-center w-4 h-4 rounded-full" style={{ background: 'rgba(16, 185, 129, 0.15)' }}>
+                                <Check size={10} style={{ color: '#10B981' }} />
                               </span>
                             )}
                           </div>
@@ -1018,12 +759,12 @@ export function LeadsClient({
                     <td>
                       <div className="flex items-center gap-1">
                         {lead.email && (
-                          <a href={`mailto:${lead.email}`} className="p-2 rounded-lg hover:bg-[var(--color-bg-secondary)] text-muted hover:text-[#007AFF] transition-all" title={lead.email}>
+                          <a href={`mailto:${lead.email}`} className="p-2 rounded-lg hover:bg-[var(--color-bg-secondary)] text-muted hover:text-[#4F46E5] transition-all" title={lead.email}>
                             <Mail size={16} />
                           </a>
                         )}
                         {lead.phone && (
-                          <a href={`tel:${lead.phone}`} className="p-2 rounded-lg hover:bg-[var(--color-bg-secondary)] text-muted hover:text-[#34C759] transition-all" title={lead.phone}>
+                          <a href={`tel:${lead.phone}`} className="p-2 rounded-lg hover:bg-[var(--color-bg-secondary)] text-muted hover:text-[#10B981] transition-all" title={lead.phone}>
                             <Phone size={16} />
                           </a>
                         )}
@@ -1049,18 +790,18 @@ export function LeadsClient({
                     </td>
 
                     <td>
-                      <div className="flex items-center justify-end gap-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="table-actions">
                         <button
-                          className={`p-2 rounded-lg transition-all ${!lead.reviewed ? 'hover:bg-[rgba(52,199,89,0.1)] text-muted hover:text-[#34C759]' : 'hover:bg-[rgba(255,149,0,0.1)] text-muted hover:text-[#FF9500]'}`}
+                          className={`table-action-btn ${!lead.reviewed ? 'success' : 'warning'}`}
                           onClick={() => handleMarkReviewed(lead.id, !lead.reviewed)}
                           title={lead.reviewed ? 'Zurück in Inbox' : 'Als Ready markieren'}
                         >
                           {lead.reviewed ? <Inbox size={16} /> : <CheckCircle2 size={16} />}
                         </button>
-                        <button className="p-2 rounded-lg hover:bg-[var(--color-bg-secondary)] text-muted hover:text-[var(--color-text)] transition-all" onClick={() => setEditingLead(lead)}>
+                        <button className="table-action-btn" onClick={() => setEditingLead(lead)} title="Bearbeiten">
                           <Edit2 size={16} />
                         </button>
-                        <button className="p-2 rounded-lg hover:bg-[rgba(255,59,48,0.1)] text-muted hover:text-[#FF3B30] transition-all" onClick={() => handleDelete(lead.id)}>
+                        <button className="table-action-btn danger" onClick={() => handleDelete(lead.id)} title="Löschen">
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -1192,11 +933,11 @@ export function LeadsClient({
                       width: '36px',
                       height: '36px',
                       borderRadius: '10px',
-                      border: page === currentPage ? '1px solid #007AFF' : '1px solid transparent',
-                      background: page === currentPage ? 'rgba(0, 122, 255, 0.08)' : 'transparent',
+                      border: page === currentPage ? '1px solid #4F46E5' : '1px solid transparent',
+                      background: page === currentPage ? 'rgba(79, 70, 229, 0.08)' : 'transparent',
                       fontSize: '14px',
                       fontWeight: page === currentPage ? 600 : 500,
-                      color: page === currentPage ? '#007AFF' : 'var(--color-text-secondary)',
+                      color: page === currentPage ? '#4F46E5' : 'var(--color-text-secondary)',
                       cursor: 'pointer',
                       transition: 'all 0.2s'
                     }}

@@ -34,21 +34,21 @@ export function EnrichmentCard({ enrichmentActivity, leadId }: EnrichmentCardPro
 
   const statusConfig = {
     complete: {
-      label: 'Vollstaendig',
+      label: 'Vollständig',
       color: 'var(--color-green)',
-      bg: 'rgba(52, 199, 89, 0.10)',
+      bg: 'rgba(16, 185, 129, 0.10)',
       icon: <CheckCircle size={14} />,
     },
     partial: {
-      label: 'Teilweise',
+      label: 'Teilweise gefunden',
       color: 'var(--color-orange)',
-      bg: 'rgba(255, 149, 0, 0.10)',
+      bg: 'rgba(245, 158, 11, 0.10)',
       icon: <CheckCircle size={14} />,
     },
     failed: {
       label: 'Fehlgeschlagen',
       color: 'var(--color-red)',
-      bg: 'rgba(255, 59, 48, 0.10)',
+      bg: 'rgba(239, 68, 68, 0.10)',
       icon: <XCircle size={14} />,
     },
   }
@@ -101,7 +101,7 @@ export function EnrichmentCard({ enrichmentActivity, leadId }: EnrichmentCardPro
               alignItems: 'center',
               justifyContent: 'center',
               color: 'var(--color-blue)',
-              background: 'rgba(0, 122, 255, 0.10)',
+              background: 'rgba(79, 70, 229, 0.10)',
             }}
           >
             <Globe size={16} />
@@ -197,7 +197,7 @@ export function EnrichmentCard({ enrichmentActivity, leadId }: EnrichmentCardPro
                   letterSpacing: '0.03em',
                 }}
               >
-                Geschaeftsprozesse
+                Geschäftsprozesse
               </span>
             </div>
             <p
@@ -244,9 +244,9 @@ export function EnrichmentCard({ enrichmentActivity, leadId }: EnrichmentCardPro
               const email = typeof entry === 'string' ? entry : entry.value
               const source = typeof entry === 'string' ? null : entry.source
               const sourceConfig = source === 'website'
-                ? { label: 'Website', color: 'var(--color-green)', bg: 'rgba(52, 199, 89, 0.10)', icon: <ShieldCheck size={10} /> }
+                ? { label: 'Website', color: 'var(--color-green)', bg: 'rgba(16, 185, 129, 0.10)', icon: <ShieldCheck size={10} /> }
                 : source === 'ai'
-                  ? { label: 'KI-Recherche', color: 'var(--color-orange)', bg: 'rgba(255, 149, 0, 0.10)', icon: <AlertTriangle size={10} /> }
+                  ? { label: 'KI-Recherche', color: 'var(--color-orange)', bg: 'rgba(245, 158, 11, 0.10)', icon: <AlertTriangle size={10} /> }
                   : source === 'existing'
                     ? { label: 'Vorhanden', color: 'var(--color-text-tertiary)', bg: 'var(--color-bg-tertiary)', icon: null }
                     : null
@@ -308,9 +308,9 @@ export function EnrichmentCard({ enrichmentActivity, leadId }: EnrichmentCardPro
               const phone = typeof entry === 'string' ? entry : entry.value
               const source = typeof entry === 'string' ? null : entry.source
               const sourceConfig = source === 'website'
-                ? { label: 'Website', color: 'var(--color-green)', bg: 'rgba(52, 199, 89, 0.10)', icon: <ShieldCheck size={10} /> }
+                ? { label: 'Website', color: 'var(--color-green)', bg: 'rgba(16, 185, 129, 0.10)', icon: <ShieldCheck size={10} /> }
                 : source === 'ai'
-                  ? { label: 'KI-Recherche', color: 'var(--color-orange)', bg: 'rgba(255, 149, 0, 0.10)', icon: <AlertTriangle size={10} /> }
+                  ? { label: 'KI-Recherche', color: 'var(--color-orange)', bg: 'rgba(245, 158, 11, 0.10)', icon: <AlertTriangle size={10} /> }
                   : source === 'existing'
                     ? { label: 'Vorhanden', color: 'var(--color-text-tertiary)', bg: 'var(--color-bg-tertiary)', icon: null }
                     : null

@@ -50,12 +50,12 @@ export default async function Dashboard() {
   const todos = todosResult.data || [];
 
   const stages = [
-    { id: 'new', name: 'Neu', color: '#86868b' },
-    { id: 'contacted', name: 'Kontaktiert', color: '#007AFF' },
-    { id: 'qualified', name: 'Qualifiziert', color: '#AF52DE' },
-    { id: 'discovery_call', name: 'Discovery', color: '#FF9500' },
-    { id: 'proposal_sent', name: 'Proposal', color: '#FF9500' },
-    { id: 'won', name: 'Gewonnen', color: '#34C759' },
+    { id: 'new', name: 'Neu', color: '#64748B' },
+    { id: 'contacted', name: 'Kontaktiert', color: '#4F46E5' },
+    { id: 'qualified', name: 'Qualifiziert', color: '#818CF8' },
+    { id: 'discovery_call', name: 'Discovery', color: '#F59E0B' },
+    { id: 'proposal_sent', name: 'Proposal', color: '#F59E0B' },
+    { id: 'won', name: 'Gewonnen', color: '#10B981' },
   ];
 
   const stageCounts = stages.map(stage => ({
@@ -64,9 +64,9 @@ export default async function Dashboard() {
   }));
 
   const getScoreColor = (score: number) => {
-    if (score >= 7) return '#34C759'
-    if (score >= 5) return '#FF9500'
-    return '#86868b'
+    if (score >= 7) return '#10B981'
+    if (score >= 5) return '#F59E0B'
+    return '#64748B'
   }
 
   return (
@@ -90,265 +90,127 @@ export default async function Dashboard() {
 
       <div className="page-content">
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-          <div className="stat-card">
-            <div className="flex items-center justify-between mb-4">
+        <div className="stats-grid">
+          <div className="stat-card" style={{ '--stat-accent': 'var(--color-blue)' } as React.CSSProperties}>
+            <div className="stat-card-header">
               <span className="stat-label">Pipeline</span>
-              <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(0, 122, 255, 0.1)' }}>
-                <TrendingUp size={20} style={{ color: '#007AFF' }} />
-              </div>
+              <div className="stat-icon stat-icon-blue"><TrendingUp size={20} /></div>
             </div>
             <div className="stat-value">€{pipelineValue > 0 ? (pipelineValue / 1000).toFixed(0) + 'k' : '0'}</div>
-            <p className="text-sm text-muted mt-2">{totalDeals} aktive Deals</p>
+            <p className="stat-subtitle">{totalDeals} aktive Deals</p>
           </div>
 
-          <div className="stat-card">
-            <div className="flex items-center justify-between mb-4">
+          <div className="stat-card" style={{ '--stat-accent': 'var(--color-green)' } as React.CSSProperties}>
+            <div className="stat-card-header">
               <span className="stat-label">Gewonnen</span>
-              <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(52, 199, 89, 0.1)' }}>
-                <DollarSign size={20} style={{ color: '#34C759' }} />
-              </div>
+              <div className="stat-icon stat-icon-green"><DollarSign size={20} /></div>
             </div>
-            <div className="stat-value" style={{ color: '#34C759' }}>€{wonValue > 0 ? (wonValue / 1000).toFixed(0) + 'k' : '0'}</div>
-            <p className="text-sm text-muted mt-2">{wonDeals.length} abgeschlossen</p>
+            <div className="stat-value" style={{ color: 'var(--color-green)' }}>€{wonValue > 0 ? (wonValue / 1000).toFixed(0) + 'k' : '0'}</div>
+            <p className="stat-subtitle">{wonDeals.length} abgeschlossen</p>
           </div>
 
-          <div className="stat-card">
-            <div className="flex items-center justify-between mb-4">
+          <div className="stat-card" style={{ '--stat-accent': 'var(--color-purple)' } as React.CSSProperties}>
+            <div className="stat-card-header">
               <span className="stat-label">Leads</span>
-              <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(175, 82, 222, 0.1)' }}>
-                <Users size={20} style={{ color: '#AF52DE' }} />
-              </div>
+              <div className="stat-icon stat-icon-purple"><Users size={20} /></div>
             </div>
             <div className="stat-value">{totalLeads}</div>
-            <p className="text-sm mt-2" style={{ color: '#34C759' }}>{qualifiedLeads} qualifiziert</p>
+            <p className="stat-subtitle" style={{ color: 'var(--color-green)' }}>{qualifiedLeads} qualifiziert</p>
           </div>
 
-          <div className="stat-card">
-            <div className="flex items-center justify-between mb-4">
+          <div className="stat-card" style={{ '--stat-accent': 'var(--color-orange)' } as React.CSSProperties}>
+            <div className="stat-card-header">
               <span className="stat-label">Conversion</span>
-              <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(255, 149, 0, 0.1)' }}>
-                <Target size={20} style={{ color: '#FF9500' }} />
-              </div>
+              <div className="stat-icon stat-icon-orange"><Target size={20} /></div>
             </div>
             <div className="stat-value">{totalLeads > 0 ? ((qualifiedLeads / totalLeads) * 100).toFixed(0) : 0}%</div>
-            <p className="text-sm text-muted mt-2">Lead → Qualified</p>
+            <p className="stat-subtitle">Lead → Qualified</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3" style={{ gap: '48px' }}>
           {/* Main Column */}
-          <div className="xl:col-span-2 space-y-6">
+          <div className="xl:col-span-2" style={{ display: 'flex', flexDirection: 'column', gap: '48px' }}>
             {/* Today's Tasks */}
-            <div
-              style={{
-                background: 'var(--color-bg)',
-                borderRadius: '20px',
-                border: '1px solid var(--color-border)',
-                overflow: 'hidden',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-              }}
-            >
-              <div
-                style={{
-                  padding: '24px',
-                  borderBottom: '1px solid var(--color-border)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div
-                    style={{
-                      width: '52px',
-                      height: '52px',
-                      borderRadius: '16px',
-                      background: 'rgba(0, 122, 255, 0.1)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <Clock size={24} style={{ color: '#007AFF' }} />
+            <div className="section-card">
+              <div className="section-card-header">
+                <div className="section-card-header-left">
+                  <div className="section-card-icon stat-icon-blue">
+                    <Clock size={24} />
                   </div>
                   <div>
-                    <h2 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--color-text)', marginBottom: '4px' }}>Heute</h2>
-                    <p style={{ fontSize: '13px', color: 'var(--color-text-tertiary)' }}>{followUps.length} Aufgaben</p>
+                    <h2 className="section-card-title">Heute</h2>
+                    <p className="section-card-subtitle">{followUps.length} Aufgaben</p>
                   </div>
                 </div>
-                <Link
-                  href="/leads"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '10px 16px',
-                    background: 'var(--color-bg)',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: '12px',
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    color: 'var(--color-text-secondary)',
-                    textDecoration: 'none'
-                  }}
-                >
+                <Link href="/leads" className="btn btn-secondary btn-sm">
                   Alle anzeigen
                 </Link>
               </div>
               <div>
                 {followUps.length > 0 ? (
                   <div>
-                    {followUps.map((lead, index) => {
+                    {followUps.map((lead) => {
                       const isOverdue = lead.next_follow_up_at && new Date(lead.next_follow_up_at) < today;
                       const isToday = lead.next_follow_up_at && new Date(lead.next_follow_up_at).toDateString() === today.toDateString();
 
                       return (
-                        <Link
-                          key={lead.id}
-                          href={`/leads/${lead.id}`}
-                          className="hover:bg-[var(--color-bg-secondary)]"
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '16px',
-                            padding: '20px 24px',
-                            borderBottom: index < followUps.length - 1 ? '1px solid var(--color-border)' : 'none',
-                            textDecoration: 'none',
-                            transition: 'background 0.2s'
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: '12px',
-                              height: '12px',
-                              borderRadius: '50%',
-                              flexShrink: 0,
-                              background: isOverdue ? '#FF3B30' : isToday ? '#FF9500' : '#34C759'
-                            }}
-                          />
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{ fontWeight: 500, color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.name}</p>
-                            <p style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.company || '–'}</p>
+                        <Link key={lead.id} href={`/leads/${lead.id}`} className="list-item">
+                          <div className={`status-dot ${isOverdue ? 'status-dot-overdue' : isToday ? 'status-dot-today' : 'status-dot-upcoming'}`} />
+                          <div className="list-item-content">
+                            <p className="list-item-title">{lead.name}</p>
+                            <p className="list-item-subtitle">{lead.company || '–'}</p>
                           </div>
-                          <span
-                            style={{
-                              fontSize: '12px',
-                              fontWeight: 500,
-                              padding: '6px 12px',
-                              borderRadius: '100px',
-                              background: isOverdue ? 'rgba(255, 59, 48, 0.1)' : isToday ? 'rgba(255, 149, 0, 0.1)' : 'rgba(52, 199, 89, 0.1)',
-                              color: isOverdue ? '#FF3B30' : isToday ? '#FF9500' : '#34C759'
-                            }}
-                          >
+                          <span className={`badge ${isOverdue ? 'badge-danger' : isToday ? 'badge-warning' : 'badge-success'}`}>
                             {isOverdue ? 'Überfällig' : isToday ? 'Heute' : new Date(lead.next_follow_up_at).toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })}
                           </span>
-                          <ArrowRight size={18} style={{ color: 'var(--color-text-tertiary)' }} />
+                          <ArrowRight size={18} className="text-muted" />
                         </Link>
                       );
                     })}
                   </div>
                 ) : (
-                  <div style={{ textAlign: 'center', padding: '48px 24px' }}>
-                    <div
-                      style={{
-                        width: '64px',
-                        height: '64px',
-                        borderRadius: '20px',
-                        margin: '0 auto 16px',
-                        background: 'rgba(52, 199, 89, 0.1)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      <CheckCircle2 size={28} style={{ color: '#34C759' }} />
+                  <div className="empty-state" style={{ padding: '48px 24px' }}>
+                    <div className="empty-state-icon" style={{ background: 'rgba(16, 185, 129, 0.1)' }}>
+                      <CheckCircle2 size={28} style={{ color: 'var(--color-green)' }} />
                     </div>
-                    <p style={{ fontWeight: 600, color: 'var(--color-text)', marginBottom: '4px' }}>Alles erledigt</p>
-                    <p style={{ fontSize: '14px', color: 'var(--color-text-tertiary)' }}>Keine Aufgaben für heute</p>
+                    <div className="empty-state-title">Alles erledigt</div>
+                    <div className="empty-state-description">Keine Aufgaben für heute</div>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Pipeline */}
-            <div
-              style={{
-                background: 'var(--color-bg)',
-                borderRadius: '20px',
-                border: '1px solid var(--color-border)',
-                overflow: 'hidden',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-              }}
-            >
-              <div
-                style={{
-                  padding: '24px',
-                  borderBottom: '1px solid var(--color-border)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div
-                    style={{
-                      width: '52px',
-                      height: '52px',
-                      borderRadius: '16px',
-                      background: 'rgba(175, 82, 222, 0.1)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <Zap size={24} style={{ color: '#AF52DE' }} />
+            <div className="section-card">
+              <div className="section-card-header">
+                <div className="section-card-header-left">
+                  <div className="section-card-icon stat-icon-purple">
+                    <Zap size={24} />
                   </div>
-                  <h2 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--color-text)' }}>Pipeline</h2>
+                  <h2 className="section-card-title">Pipeline</h2>
                 </div>
-                <Link
-                  href="/leads"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '10px 16px',
-                    background: 'var(--color-bg)',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: '12px',
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    color: 'var(--color-text-secondary)',
-                    textDecoration: 'none'
-                  }}
-                >
-                  Details
-                </Link>
+                <Link href="/leads" className="btn btn-secondary btn-sm">Details</Link>
               </div>
-              <div style={{ padding: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '16px', height: '160px' }}>
+              <div className="section-card-body">
+                <div className="pipeline-chart">
                   {stageCounts.map((stage) => {
                     const maxCount = Math.max(...stageCounts.map(s => s.count), 1);
                     const height = (stage.count / maxCount) * 100;
 
                     return (
-                      <div key={stage.id} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <span style={{ fontSize: '15px', fontWeight: 600, marginBottom: '12px', color: stage.color }}>
+                      <div key={stage.id} className="pipeline-bar-group">
+                        <span className="pipeline-bar-value" style={{ color: stage.color }}>
                           {stage.count}
                         </span>
                         <div
+                          className="pipeline-bar"
                           style={{
-                            width: '100%',
-                            borderRadius: '10px',
-                            transition: 'all 0.5s ease',
                             height: `${Math.max(height, 8)}%`,
                             background: stage.color,
-                            minHeight: '8px',
                           }}
                         />
-                        <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginTop: '12px', textAlign: 'center' }}>
-                          {stage.name}
-                        </span>
+                        <span className="pipeline-bar-label">{stage.name}</span>
                       </div>
                     );
                   })}
@@ -357,128 +219,44 @@ export default async function Dashboard() {
             </div>
 
             {/* Top Leads */}
-            <div
-              style={{
-                background: 'var(--color-bg)',
-                borderRadius: '20px',
-                border: '1px solid var(--color-border)',
-                overflow: 'hidden',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-              }}
-            >
-              <div
-                style={{
-                  padding: '24px',
-                  borderBottom: '1px solid var(--color-border)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div
-                    style={{
-                      width: '52px',
-                      height: '52px',
-                      borderRadius: '16px',
-                      background: 'rgba(255, 59, 48, 0.1)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <TrendingUp size={24} style={{ color: '#FF3B30' }} />
+            <div className="section-card">
+              <div className="section-card-header">
+                <div className="section-card-header-left">
+                  <div className="section-card-icon stat-icon-red">
+                    <TrendingUp size={24} />
                   </div>
-                  <h2 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--color-text)' }}>Top Leads</h2>
+                  <h2 className="section-card-title">Top Leads</h2>
                 </div>
-                <Link
-                  href="/leads"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '10px 16px',
-                    background: 'var(--color-bg)',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: '12px',
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    color: 'var(--color-text-secondary)',
-                    textDecoration: 'none'
-                  }}
-                >
-                  Alle
-                </Link>
+                <Link href="/leads" className="btn btn-secondary btn-sm">Alle</Link>
               </div>
               <div>
                 {topLeads.length > 0 ? (
                   <div>
-                    {topLeads.map((lead, index) => {
+                    {topLeads.map((lead) => {
                       const score = lead.lead_score || 0;
                       const scoreColor = getScoreColor(score);
                       const initials = lead.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
                       return (
-                        <Link
-                          key={lead.id}
-                          href={`/leads/${lead.id}`}
-                          className="hover:bg-[var(--color-bg-secondary)]"
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '16px',
-                            padding: '20px 24px',
-                            borderBottom: index < topLeads.length - 1 ? '1px solid var(--color-border)' : 'none',
-                            textDecoration: 'none',
-                            transition: 'background 0.2s'
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: '48px',
-                              height: '48px',
-                              borderRadius: '14px',
-                              background: 'linear-gradient(135deg, #007AFF 0%, #5856D6 100%)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: 'white',
-                              fontWeight: 600,
-                              fontSize: '15px'
-                            }}
-                          >
-                            {initials}
+                        <Link key={lead.id} href={`/leads/${lead.id}`} className="list-item">
+                          <div className="list-item-avatar">{initials}</div>
+                          <div className="list-item-content">
+                            <p className="list-item-title">{lead.name}</p>
+                            <p className="list-item-subtitle">{lead.company || '–'}</p>
                           </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{ fontWeight: 500, color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.name}</p>
-                            <p style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.company || '–'}</p>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontSize: '17px', fontWeight: 600, color: scoreColor }}>
+                          <div className="flex items-center gap-3">
+                            <div className="score-indicator">
+                              <span className="score-value" style={{ color: scoreColor, fontSize: '17px' }}>
                                 {score.toFixed(1)}
                               </span>
-                              <div style={{ width: '48px', height: '6px', borderRadius: '3px', background: 'var(--color-bg-tertiary)', overflow: 'hidden' }}>
-                                <div
-                                  style={{ height: '100%', borderRadius: '3px', width: `${(score / 10) * 100}%`, background: scoreColor }}
-                                />
+                              <div className="score-bar">
+                                <div className={`score-fill ${score >= 7 ? 'high' : score >= 5 ? 'medium' : 'low'}`} style={{ width: `${(score / 10) * 100}%` }} />
                               </div>
                             </div>
                             {lead.linkedin_url && (
-                              <a
-                                href={lead.linkedin_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{
-                                  padding: '8px',
-                                  borderRadius: '10px',
-                                  color: 'var(--color-text-tertiary)',
-                                  transition: 'all 0.2s'
-                                }}
-                                className="hover:bg-[var(--color-bg-secondary)] hover:text-[#0A66C2]"
-                              >
+                              <span className="p-2 rounded-lg text-[#0A66C2]">
                                 <Linkedin size={18} />
-                              </a>
+                              </span>
                             )}
                           </div>
                         </Link>
@@ -486,8 +264,8 @@ export default async function Dashboard() {
                     })}
                   </div>
                 ) : (
-                  <div style={{ textAlign: 'center', padding: '48px 24px' }}>
-                    <p style={{ color: 'var(--color-text-tertiary)' }}>Keine Leads</p>
+                  <div className="empty-state" style={{ padding: '48px 24px' }}>
+                    <div className="empty-state-description">Keine Leads</div>
                   </div>
                 )}
               </div>
@@ -495,226 +273,80 @@ export default async function Dashboard() {
           </div>
 
           {/* Side Column */}
-          <div className="space-y-6">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '48px' }}>
             {/* Quick Actions */}
-            <div
-              style={{
-                background: 'var(--color-bg)',
-                borderRadius: '20px',
-                border: '1px solid var(--color-border)',
-                overflow: 'hidden',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-              }}
-            >
-              <div style={{ padding: '24px', borderBottom: '1px solid var(--color-border)' }}>
-                <h2 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--color-text)' }}>Schnellzugriff</h2>
+            <div className="section-card">
+              <div className="section-card-header">
+                <h2 className="section-card-title">Schnellzugriff</h2>
               </div>
-              <div style={{ padding: '16px' }}>
-                <Link
-                  href="/leads"
-                  className="hover:bg-[var(--color-bg-secondary)] group"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '16px',
-                    padding: '16px',
-                    borderRadius: '14px',
-                    textDecoration: 'none',
-                    transition: 'background 0.2s'
-                  }}
-                >
-                  <div
-                    style={{
-                      width: '48px',
-                      height: '48px',
-                      borderRadius: '14px',
-                      background: 'rgba(0, 122, 255, 0.1)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <Users size={22} style={{ color: '#007AFF' }} />
+              <div className="section-card-body-compact">
+                <Link href="/leads" className="quick-action-item group">
+                  <div className="quick-action-icon stat-icon-blue"><Users size={22} /></div>
+                  <div className="quick-action-content">
+                    <p className="quick-action-title">Lead hinzufügen</p>
+                    <p className="quick-action-desc">Manuell oder Import</p>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontWeight: 500, color: 'var(--color-text)', marginBottom: '2px' }}>Lead hinzufügen</p>
-                    <p style={{ fontSize: '13px', color: 'var(--color-text-tertiary)' }}>Manuell oder Import</p>
-                  </div>
-                  <ChevronRight size={18} style={{ color: 'var(--color-text-tertiary)', opacity: 0 }} className="group-hover:opacity-100" />
+                  <ChevronRight size={18} className="text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
-                <Link
-                  href="/deals"
-                  className="hover:bg-[var(--color-bg-secondary)] group"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '16px',
-                    padding: '16px',
-                    borderRadius: '14px',
-                    textDecoration: 'none',
-                    transition: 'background 0.2s'
-                  }}
-                >
-                  <div
-                    style={{
-                      width: '48px',
-                      height: '48px',
-                      borderRadius: '14px',
-                      background: 'rgba(52, 199, 89, 0.1)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <DollarSign size={22} style={{ color: '#34C759' }} />
+                <Link href="/deals" className="quick-action-item group">
+                  <div className="quick-action-icon stat-icon-green"><DollarSign size={22} /></div>
+                  <div className="quick-action-content">
+                    <p className="quick-action-title">Deal erstellen</p>
+                    <p className="quick-action-desc">Aus qualifiziertem Lead</p>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontWeight: 500, color: 'var(--color-text)', marginBottom: '2px' }}>Deal erstellen</p>
-                    <p style={{ fontSize: '13px', color: 'var(--color-text-tertiary)' }}>Aus qualifiziertem Lead</p>
-                  </div>
-                  <ChevronRight size={18} style={{ color: 'var(--color-text-tertiary)', opacity: 0 }} className="group-hover:opacity-100" />
+                  <ChevronRight size={18} className="text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
-                <Link
-                  href="/activities"
-                  className="hover:bg-[var(--color-bg-secondary)] group"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '16px',
-                    padding: '16px',
-                    borderRadius: '14px',
-                    textDecoration: 'none',
-                    transition: 'background 0.2s'
-                  }}
-                >
-                  <div
-                    style={{
-                      width: '48px',
-                      height: '48px',
-                      borderRadius: '14px',
-                      background: 'rgba(255, 149, 0, 0.1)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <Calendar size={22} style={{ color: '#FF9500' }} />
+                <Link href="/activities" className="quick-action-item group">
+                  <div className="quick-action-icon stat-icon-orange"><Calendar size={22} /></div>
+                  <div className="quick-action-content">
+                    <p className="quick-action-title">Aktivität planen</p>
+                    <p className="quick-action-desc">Call, Meeting, E-Mail</p>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontWeight: 500, color: 'var(--color-text)', marginBottom: '2px' }}>Aktivität planen</p>
-                    <p style={{ fontSize: '13px', color: 'var(--color-text-tertiary)' }}>Call, Meeting, E-Mail</p>
-                  </div>
-                  <ChevronRight size={18} style={{ color: 'var(--color-text-tertiary)', opacity: 0 }} className="group-hover:opacity-100" />
+                  <ChevronRight size={18} className="text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
               </div>
             </div>
 
             {/* To-Do */}
-            <div
-              style={{
-                background: 'var(--color-bg)',
-                borderRadius: '20px',
-                border: '1px solid var(--color-border)',
-                overflow: 'hidden',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-              }}
-            >
-              <div
-                style={{
-                  padding: '24px',
-                  borderBottom: '1px solid var(--color-border)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '12px',
-                      background: 'rgba(88, 86, 214, 0.1)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <ListTodo size={20} style={{ color: '#5856D6' }} />
+            <div className="section-card">
+              <div className="section-card-header">
+                <div className="section-card-header-left">
+                  <div className="stat-icon stat-icon-indigo" style={{ width: '40px', height: '40px', borderRadius: '12px' }}>
+                    <ListTodo size={20} />
                   </div>
-                  <h2 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--color-text)' }}>To-Do</h2>
+                  <h2 className="section-card-title">To-Do</h2>
                 </div>
-                <span style={{ fontSize: '13px', color: 'var(--color-text-tertiary)' }}>
+                <span className="text-muted" style={{ fontSize: '13px' }}>
                   {todos.filter(t => !t.completed).length} offen
                 </span>
               </div>
-              <div style={{ padding: '20px 24px' }}>
+              <div className="section-card-body">
                 <TodosClient todos={todos} />
               </div>
             </div>
 
             {/* Activity */}
-            <div
-              style={{
-                background: 'var(--color-bg)',
-                borderRadius: '20px',
-                border: '1px solid var(--color-border)',
-                overflow: 'hidden',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-              }}
-            >
-              <div
-                style={{
-                  padding: '24px',
-                  borderBottom: '1px solid var(--color-border)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}
-              >
-                <h2 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--color-text)' }}>Aktivitäten</h2>
-                <Link
-                  href="/activities"
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: '10px',
-                    color: 'var(--color-text-tertiary)'
-                  }}
-                  className="hover:bg-[var(--color-bg-secondary)]"
-                >
+            <div className="section-card">
+              <div className="section-card-header">
+                <h2 className="section-card-title">Aktivitäten</h2>
+                <Link href="/activities" className="btn btn-ghost btn-sm">
                   <ChevronRight size={18} />
                 </Link>
               </div>
-              <div style={{ padding: '20px 24px' }}>
+              <div className="section-card-body">
                 {activities.length > 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     {activities.slice(0, 5).map((activity) => (
-                      <div key={activity.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
-                        <div
-                          style={{
-                            width: '36px',
-                            height: '36px',
-                            borderRadius: '10px',
-                            background: 'var(--color-bg-secondary)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'var(--color-text-tertiary)',
-                            flexShrink: 0
-                          }}
-                        >
+                      <div key={activity.id} className="activity-item">
+                        <div className="activity-icon">
                           {activity.type === 'call' ? <Phone size={16} /> :
                            activity.type === 'email_sent' ? <Mail size={16} /> :
                            activity.type === 'linkedin_message' ? <Linkedin size={16} /> :
                            <Circle size={16} />}
                         </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activity.subject || activity.type}</p>
-                          <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginTop: '2px' }}>
+                        <div className="activity-content">
+                          <p className="activity-title">{activity.subject || activity.type}</p>
+                          <p className="activity-time">
                             {new Date(activity.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })}
                           </p>
                         </div>
@@ -722,8 +354,8 @@ export default async function Dashboard() {
                     ))}
                   </div>
                 ) : (
-                  <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--color-text-tertiary)', fontSize: '14px' }}>
-                    Keine Aktivitäten
+                  <div className="empty-state" style={{ padding: '32px 0' }}>
+                    <div className="empty-state-description">Keine Aktivitäten</div>
                   </div>
                 )}
               </div>

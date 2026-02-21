@@ -292,7 +292,7 @@ export function WorkflowBuilder({ workflows: initialWorkflows }: WorkflowBuilder
                   {togglingId === wf.id ? (
                     <Loader2 size={28} style={{ color: 'var(--color-text-tertiary)', animation: 'spin 1s linear infinite' }} />
                   ) : wf.active ? (
-                    <ToggleRight size={28} style={{ color: '#34c759' }} />
+                    <ToggleRight size={28} style={{ color: '#10B981' }} />
                   ) : (
                     <ToggleLeft size={28} style={{ color: 'var(--color-text-tertiary)' }} />
                   )}
@@ -321,7 +321,7 @@ export function WorkflowBuilder({ workflows: initialWorkflows }: WorkflowBuilder
                 <button
                   onClick={() => handleDelete(wf.id)}
                   disabled={deletingId === wf.id}
-                  style={{ ...styles.iconButton, color: '#ff3b30' }}
+                  style={{ ...styles.iconButton, color: '#EF4444' }}
                   title="Löschen"
                 >
                   {deletingId === wf.id ? <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <Trash2 size={15} />}
@@ -355,7 +355,7 @@ export function WorkflowBuilder({ workflows: initialWorkflows }: WorkflowBuilder
                     flex: 1,
                     height: 4,
                     borderRadius: 2,
-                    background: s <= step ? '#007aff' : 'var(--color-border)',
+                    background: s <= step ? '#4F46E5' : 'var(--color-border)',
                     transition: 'background 0.2s',
                   }}
                 />
@@ -405,11 +405,11 @@ export function WorkflowBuilder({ workflows: initialWorkflows }: WorkflowBuilder
                           }}
                           style={{
                             ...styles.triggerCard,
-                            borderColor: selected ? '#007aff' : 'var(--color-border)',
-                            background: selected ? 'rgba(0,122,255,0.06)' : 'var(--color-bg)',
+                            borderColor: selected ? '#4F46E5' : 'var(--color-border)',
+                            background: selected ? 'rgba(79,70,229,0.06)' : 'var(--color-bg)',
                           }}
                         >
-                          <Icon size={22} style={{ color: selected ? '#007aff' : 'var(--color-text-secondary)', marginBottom: 8 }} />
+                          <Icon size={22} style={{ color: selected ? '#4F46E5' : 'var(--color-text-secondary)', marginBottom: 8 }} />
                           <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)', display: 'block', marginBottom: 2 }}>
                             {t.label}
                           </span>
@@ -489,7 +489,7 @@ export function WorkflowBuilder({ workflows: initialWorkflows }: WorkflowBuilder
                             {meta?.label ?? action.type}
                           </span>
                           <button onClick={() => removeAction(idx)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}>
-                            <X size={16} style={{ color: '#ff3b30' }} />
+                            <X size={16} style={{ color: '#EF4444' }} />
                           </button>
                         </div>
 
@@ -651,8 +651,8 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 6,
     fontSize: 12,
     fontWeight: 500,
-    color: '#007aff',
-    background: 'rgba(0,122,255,0.08)',
+    color: '#4F46E5',
+    background: 'rgba(79,70,229,0.08)',
     borderRadius: 8,
     padding: '4px 10px',
   },
@@ -677,7 +677,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 14,
     fontWeight: 600,
     color: '#fff',
-    background: '#007aff',
+    background: '#4F46E5',
     border: 'none',
     borderRadius: 14,
     cursor: 'pointer',

@@ -70,22 +70,22 @@ function formatRelativeTime(dateString: string): string {
 const tabConfig: Record<Tab, { label: string; color: string; bgColor: string; icon: typeof AlertCircle; emptyText: string }> = {
   overdue: {
     label: 'Uberfällig',
-    color: '#FF3B30',
-    bgColor: 'rgba(255, 59, 48, 0.1)',
+    color: '#EF4444',
+    bgColor: 'rgba(239, 68, 68, 0.1)',
     icon: AlertCircle,
     emptyText: 'Keine überfälligen Follow-ups',
   },
   today: {
     label: 'Heute',
-    color: '#FF9500',
-    bgColor: 'rgba(255, 149, 0, 0.1)',
+    color: '#F59E0B',
+    bgColor: 'rgba(245, 158, 11, 0.1)',
     icon: CalendarCheck,
     emptyText: 'Keine Follow-ups heute',
   },
   upcoming: {
     label: 'Bald',
-    color: '#007AFF',
-    bgColor: 'rgba(0, 122, 255, 0.1)',
+    color: '#4F46E5',
+    bgColor: 'rgba(79, 70, 229, 0.1)',
     icon: Clock,
     emptyText: 'Keine anstehenden Follow-ups',
   },
@@ -180,7 +180,7 @@ export function NotificationDropdown() {
               right: '8px',
               width: '18px',
               height: '18px',
-              background: 'linear-gradient(135deg, #FF3B30 0%, #FF453A 100%)',
+              background: 'linear-gradient(135deg, #EF4444 0%, #FF453A 100%)',
               borderRadius: '9px',
               display: 'flex',
               alignItems: 'center',
@@ -188,7 +188,7 @@ export function NotificationDropdown() {
               fontSize: '10px',
               fontWeight: 700,
               color: 'white',
-              boxShadow: '0 2px 6px rgba(255, 59, 48, 0.4)',
+              boxShadow: '0 2px 6px rgba(239, 68, 68, 0.4)',
               border: '2px solid var(--color-bg)',
             }}
           >

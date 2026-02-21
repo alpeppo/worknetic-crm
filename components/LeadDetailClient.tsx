@@ -75,7 +75,10 @@ export function LeadDetailClient({ lead }: LeadDetailClientProps) {
 
   const handleStageChange = async (newStage: string) => {
     setIsLoading(true)
-    await updateLeadStage(lead.id, newStage)
+    const result = await updateLeadStage(lead.id, newStage)
+    if (result && !result.success) {
+      alert(`Stage konnte nicht geändert werden: ${result.error || 'Unbekannter Fehler'}`)
+    }
     setIsStageDropdownOpen(false)
     setIsLoading(false)
   }

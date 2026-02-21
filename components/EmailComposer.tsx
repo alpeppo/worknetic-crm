@@ -36,10 +36,10 @@ interface EmailTemplate {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  outreach: '#007AFF',
-  follow_up: '#FF9500',
-  proposal: '#34C759',
-  meeting: '#AF52DE',
+  outreach: '#4F46E5',
+  follow_up: '#F59E0B',
+  proposal: '#10B981',
+  meeting: '#818CF8',
   general: '#8E8E93',
 }
 
@@ -245,8 +245,8 @@ export default function EmailComposer({
     return (
       <div style={styles.container}>
         <div style={styles.errorWrapper}>
-          <AlertCircle size={20} color="#FF3B30" />
-          <span style={{ color: '#FF3B30', marginLeft: 8, fontSize: 15 }}>{error}</span>
+          <AlertCircle size={20} color="#EF4444" />
+          <span style={{ color: '#EF4444', marginLeft: 8, fontSize: 15 }}>{error}</span>
         </div>
       </div>
     )
@@ -269,8 +269,8 @@ export default function EmailComposer({
         {/* No email warning */}
         {!lead.email && (
           <div style={styles.warningBanner}>
-            <AlertCircle size={16} color="#FF9500" />
-            <span style={{ marginLeft: 8, fontSize: 14, color: '#FF9500' }}>
+            <AlertCircle size={16} color="#F59E0B" />
+            <span style={{ marginLeft: 8, fontSize: 14, color: '#F59E0B' }}>
               Keine E-Mail hinterlegt
             </span>
           </div>
@@ -281,7 +281,7 @@ export default function EmailComposer({
           <label style={styles.fieldLabel}>An:</label>
           <div style={styles.recipientValue}>
             {lead.email || (
-              <span style={{ color: '#FF9500', fontStyle: 'italic' }}>
+              <span style={{ color: '#F59E0B', fontStyle: 'italic' }}>
                 Keine E-Mail hinterlegt
               </span>
             )}
@@ -364,8 +364,8 @@ export default function EmailComposer({
         {/* Action feedback */}
         {actionFeedback && (
           <div style={styles.feedbackBanner}>
-            <Check size={16} color="#34C759" />
-            <span style={{ marginLeft: 8, fontSize: 14, color: '#34C759' }}>
+            <Check size={16} color="#10B981" />
+            <span style={{ marginLeft: 8, fontSize: 14, color: '#10B981' }}>
               {actionFeedback}
             </span>
           </div>
@@ -621,7 +621,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 4,
     background: 'none',
     border: 'none',
-    color: '#007AFF',
+    color: '#4F46E5',
     fontSize: 15,
     fontWeight: 500,
     cursor: 'pointer',
@@ -638,18 +638,18 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     padding: '10px 14px',
-    backgroundColor: '#FF950015',
+    backgroundColor: '#F59E0B15',
     borderRadius: 10,
-    border: '1px solid #FF950030',
+    border: '1px solid #F59E0B30',
   },
   feedbackBanner: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     padding: '10px 14px',
-    backgroundColor: '#34C75915',
+    backgroundColor: '#10B98115',
     borderRadius: 10,
-    border: '1px solid #34C75930',
+    border: '1px solid #10B98130',
   },
   fieldGroup: {
     display: 'flex',
@@ -820,7 +820,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 14,
     fontWeight: 500,
     color: '#FFFFFF',
-    backgroundColor: '#007AFF',
+    backgroundColor: '#4F46E5',
     border: 'none',
     borderRadius: 10,
     padding: '10px 16px',

@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { SidebarProvider } from "@/components/SidebarProvider";
 import { CommandPalette } from "@/components/CommandPalette";
 import { ToastProvider } from "@/components/ToastProvider";
+import { AppLayout } from "@/components/AppLayout";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
   title: "Worknetic CRM",
   description: "Sales-focused CRM for Coaches & Consultants",
   manifest: "/manifest.json",
-  themeColor: "#007AFF",
+  themeColor: "#3730A3",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -43,12 +44,12 @@ export default function RootLayout({
         <ThemeProvider>
           <ToastProvider>
             <SidebarProvider>
-              <div className="app-layout">
+              <AppLayout>
                 <Sidebar />
                 <main className="main-content">
                   {children}
                 </main>
-              </div>
+              </AppLayout>
               <CommandPalette />
             </SidebarProvider>
           </ToastProvider>

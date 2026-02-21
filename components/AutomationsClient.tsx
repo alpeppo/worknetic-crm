@@ -101,8 +101,8 @@ const AUTOMATIONS = [
     name: 'Leads suchen',
     description: 'Neue Leads via Perplexity Sonar finden. Importiert automatisch mit Kontaktdaten (LinkedIn, Website, E-Mail, Telefon) und reichert an.',
     icon: Search,
-    color: '#34C759',
-    bgColor: 'rgba(52, 199, 89, 0.10)',
+    color: '#10B981',
+    bgColor: 'rgba(16, 185, 129, 0.10)',
     defaultFilter: 'all' as const,
   },
   {
@@ -110,8 +110,8 @@ const AUTOMATIONS = [
     name: 'E-Mails generieren',
     description: 'Recherchiert die Firma tiefgehend via Perplexity Sonar und erstellt hyperpersonalisierte Outreach-E-Mails.',
     icon: Mail,
-    color: '#AF52DE',
-    bgColor: 'rgba(175, 82, 222, 0.10)',
+    color: '#818CF8',
+    bgColor: 'rgba(129, 140, 248, 0.10)',
     defaultFilter: 'no_email' as const,
   },
 ]
@@ -501,8 +501,8 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'rgba(52, 199, 89, 0.10)',
-                color: '#34C759',
+                background: 'rgba(16, 185, 129, 0.10)',
+                color: '#10B981',
               }}
             >
               <Search size={18} />
@@ -560,7 +560,7 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
                 step={5}
                 value={searchMaxLeads}
                 onChange={(e) => setSearchMaxLeads(Number(e.target.value))}
-                style={{ width: '100%', accentColor: '#34C759' }}
+                style={{ width: '100%', accentColor: '#10B981' }}
               />
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--color-text-tertiary)', marginTop: '4px' }}>
                 <span>5</span>
@@ -571,7 +571,7 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
             <div
               style={{
                 padding: '14px 16px',
-                background: 'rgba(52, 199, 89, 0.06)',
+                background: 'rgba(16, 185, 129, 0.06)',
                 borderRadius: '12px',
                 fontSize: '13px',
                 lineHeight: 1.5,
@@ -606,7 +606,7 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
                 fontSize: '14px',
                 fontWeight: 700,
                 color: '#fff',
-                background: '#34C759',
+                background: '#10B981',
                 border: 'none',
                 borderRadius: '12px',
                 cursor: 'pointer',
@@ -762,14 +762,14 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
                       padding: '12px 24px',
                       cursor: 'pointer',
                       borderBottom: idx < filteredLeads.length - 1 ? '1px solid var(--color-border)' : 'none',
-                      background: isSelected ? 'rgba(0, 122, 255, 0.04)' : 'transparent',
+                      background: isSelected ? 'rgba(79, 70, 229, 0.04)' : 'transparent',
                       transition: 'background 0.1s ease',
                     }}
                     onMouseEnter={(e) => {
                       if (!isSelected) e.currentTarget.style.background = 'var(--color-bg-secondary)'
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = isSelected ? 'rgba(0, 122, 255, 0.04)' : 'transparent'
+                      e.currentTarget.style.background = isSelected ? 'rgba(79, 70, 229, 0.04)' : 'transparent'
                     }}
                   >
                     {/* Checkbox */}
@@ -778,8 +778,8 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
                         width: '20px',
                         height: '20px',
                         borderRadius: '6px',
-                        border: isSelected ? '2px solid #007AFF' : '2px solid var(--color-border-strong)',
-                        background: isSelected ? '#007AFF' : 'transparent',
+                        border: isSelected ? '2px solid #4F46E5' : '2px solid var(--color-border-strong)',
+                        background: isSelected ? '#4F46E5' : 'transparent',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -826,12 +826,12 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
                         </span>
                       )}
                       {status?.hasEnrichment && (
-                        <span style={{ ...styles.badge, color: 'var(--color-green)', background: 'rgba(52, 199, 89, 0.10)' }}>
+                        <span style={{ ...styles.badge, color: 'var(--color-green)', background: 'rgba(16, 185, 129, 0.10)' }}>
                           Recherche
                         </span>
                       )}
                       {status?.hasEmailDraft && (
-                        <span style={{ ...styles.badge, color: 'var(--color-purple)', background: 'rgba(175, 82, 222, 0.10)' }}>
+                        <span style={{ ...styles.badge, color: 'var(--color-purple)', background: 'rgba(129, 140, 248, 0.10)' }}>
                           E-Mail
                         </span>
                       )}
@@ -866,7 +866,7 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
                 fontSize: '14px',
                 fontWeight: 700,
                 color: '#fff',
-                background: selectedLeadIds.size > 0 ? (selectedAutomationConfig?.color || '#007AFF') : 'var(--color-text-tertiary)',
+                background: selectedLeadIds.size > 0 ? (selectedAutomationConfig?.color || '#4F46E5') : 'var(--color-text-tertiary)',
                 border: 'none',
                 borderRadius: '12px',
                 cursor: selectedLeadIds.size > 0 ? 'pointer' : 'not-allowed',
@@ -909,8 +909,8 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  background: 'rgba(52, 199, 89, 0.10)',
-                  color: '#34C759',
+                  background: 'rgba(16, 185, 129, 0.10)',
+                  color: '#10B981',
                 }}
               >
                 {isRunning ? (
@@ -947,7 +947,7 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
                 style={{
                   height: '100%',
                   borderRadius: '3px',
-                  background: '#34C759',
+                  background: '#10B981',
                   width: searchMaxLeads > 0 ? `${Math.min((searchResults.length / searchMaxLeads) * 100, 100)}%` : '0%',
                   transition: 'width 0.3s ease',
                 }}
@@ -966,7 +966,7 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
                   gap: '12px',
                   padding: '12px 24px',
                   borderBottom: idx < searchResults.length - 1 ? '1px solid var(--color-border)' : 'none',
-                  background: result.duplicate ? 'rgba(255, 149, 0, 0.03)' : result.error ? 'rgba(255, 59, 48, 0.03)' : 'transparent',
+                  background: result.duplicate ? 'rgba(245, 158, 11, 0.03)' : result.error ? 'rgba(239, 68, 68, 0.03)' : 'transparent',
                 }}
               >
                 {result.imported ? (
@@ -1019,17 +1019,17 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
 
                 <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
                   {result.imported && (
-                    <span style={{ ...styles.badge, color: 'var(--color-green)', background: 'rgba(52, 199, 89, 0.10)' }}>
+                    <span style={{ ...styles.badge, color: 'var(--color-green)', background: 'rgba(16, 185, 129, 0.10)' }}>
                       Importiert
                     </span>
                   )}
                   {result.duplicate && (
-                    <span style={{ ...styles.badge, color: 'var(--color-orange)', background: 'rgba(255, 149, 0, 0.10)' }}>
+                    <span style={{ ...styles.badge, color: 'var(--color-orange)', background: 'rgba(245, 158, 11, 0.10)' }}>
                       Duplikat
                     </span>
                   )}
                   {result.error && (
-                    <span style={{ ...styles.badge, color: 'var(--color-red)', background: 'rgba(255, 59, 48, 0.10)' }}>
+                    <span style={{ ...styles.badge, color: 'var(--color-red)', background: 'rgba(239, 68, 68, 0.10)' }}>
                       Fehler
                     </span>
                   )}
@@ -1044,10 +1044,10 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
                   alignItems: 'center',
                   gap: '12px',
                   padding: '12px 24px',
-                  background: 'rgba(52, 199, 89, 0.02)',
+                  background: 'rgba(16, 185, 129, 0.02)',
                 }}
               >
-                <Loader2 size={18} color="#34C759" style={{ animation: 'spin 1s linear infinite' }} />
+                <Loader2 size={18} color="#10B981" style={{ animation: 'spin 1s linear infinite' }} />
                 <span style={{ flex: 1, fontSize: '14px', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
                   Suche weitere Profile...
                 </span>
@@ -1060,7 +1060,7 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
                 <div
                   style={{
                     padding: '12px 24px',
-                    background: 'rgba(0, 122, 255, 0.04)',
+                    background: 'rgba(79, 70, 229, 0.04)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '10px',
@@ -1192,7 +1192,7 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
                 style={{
                   height: '100%',
                   borderRadius: '3px',
-                  background: selectedAutomationConfig?.color || '#007AFF',
+                  background: selectedAutomationConfig?.color || '#4F46E5',
                   width: progress.total > 0 ? `${(progress.completed / progress.total) * 100}%` : '0%',
                   transition: 'width 0.3s ease',
                 }}
@@ -1223,7 +1223,7 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
                 </span>
                 {result.success ? (
                   <span style={{ fontSize: '12px', color: 'var(--color-green)', fontWeight: 600 }}>
-                    {result.enrichmentStatus === 'complete' ? 'Vollstaendig' : result.enrichmentStatus === 'partial' ? 'Teilweise' : 'OK'}
+                    {result.enrichmentStatus === 'complete' ? 'Vollständig' : result.enrichmentStatus === 'partial' ? 'Teilweise gefunden' : 'OK'}
                     {result.emailGenerated && ' + E-Mail'}
                   </span>
                 ) : (
@@ -1245,7 +1245,7 @@ export function AutomationsClient({ leads, enrichmentStatus, verticals }: Automa
                     gap: '12px',
                     padding: '12px 24px',
                     borderBottom: '1px solid var(--color-border)',
-                    background: 'rgba(0, 122, 255, 0.02)',
+                    background: 'rgba(79, 70, 229, 0.02)',
                   }}
                 >
                   <Loader2 size={18} color="var(--color-blue)" style={{ animation: 'spin 1s linear infinite' }} />
