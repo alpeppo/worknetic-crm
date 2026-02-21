@@ -20,8 +20,9 @@ jobs:
           script: |
             git config --global --add safe.directory /docker/crm-app-src
             cd /docker/crm-app-src
-            git pull origin main
-            docker build \
+            git fetch origin main
+            git reset --hard origin/main
+            docker build --no-cache \
               --build-arg NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }} \
               --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }} \
               -t crm-app:latest .
